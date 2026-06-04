@@ -1,0 +1,311 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top UZA Safety Profiles</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: #fff; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased; font-size: 14px;
+}
+.page { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+.toggle-row {
+  display: flex; margin-bottom: 1.5rem;
+  border: 1px solid #c5d4e3; border-radius: 8px; overflow: hidden; width: fit-content;
+}
+.toggle-btn {
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  padding: 8px 28px; border: none; cursor: pointer;
+  background: #fff; color: #5a6472;
+  transition: background 0.15s, color 0.15s;
+}
+.toggle-btn.active { background: #1a3a5c; color: #fff; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #5a6472;
+}
+.controls-row { display: flex; align-items: center; gap: 8px; }
+.dl-btn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 5px 13px; border: 1px solid #c5d4e3; border-radius: 6px;
+  background: #fff; color: #1a3a5c; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; transition: background 0.15s;
+}
+.dl-btn:hover { background: #f0f5fb; }
+.dl-btn svg {
+  width: 13px; height: 13px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.page-btn {
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid #c5d4e3; background: #fff; color: #1a3a5c;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.page-btn:hover:not(:disabled) { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+.page-info { font-size: 11px; color: #7a8490; font-weight: 700; white-space: nowrap; }
+
+.tbl-wrap { width: 100%; overflow-x: auto; }
+.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px;
+}
+.data-table th {
+  text-align: left; padding: 10px 13px;
+  background: #1a3a5c; color: #fff;
+  font-weight: 700; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.07em; cursor: pointer; white-space: nowrap;
+  user-select: none; transition: background 0.12s;
+}
+.data-table th:hover { background: #2a5080; }
+.data-table th.sorted { background: #3b7fc4; }
+.sort-icon { margin-left: 4px; opacity: 0.55; font-size: 10px; }
+.data-table th.sorted .sort-icon { opacity: 1; }
+
+.data-table td {
+  padding: 9px 13px; border-bottom: 1px solid #eef1f5;
+  color: #2b3340; font-size: 13px; vertical-align: middle;
+}
+.data-table tr:nth-child(even) td { background: #f7fafd; }
+.data-table tr:hover td { background: #edf4fc; }
+.data-table tr:last-child td { border-bottom: none; }
+
+.uza-name { font-weight: 700; color: #1a3a5c; }
+.uza-full { font-size: 11px; color: #8c96a0; font-weight: 400; margin-top: 2px; }
+
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="toggle-row">
+    <button class="toggle-btn active" id="btn-bus" onclick="switchMode('bus')">Bus</button>
+    <button class="toggle-btn" id="btn-rail" onclick="switchMode('rail')">Rail</button>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title" id="table-title">Top UZA Bus Safety Profiles</div>
+    <div class="controls-row">
+      <button class="dl-btn" onclick="downloadCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span id="dl-label">Download Bus CSV</span>
+      </button>
+      <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
+      <span class="page-info" id="page-info">1–10 of 25</span>
+      <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="data-table" id="main-table">
+      <thead id="thead"></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+</div>
+<script>
+const busData = [
+  {uza:"Atlanta, GA",       short:"Atlanta, GA",       ridership:2904787.33, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:12.8920, ada:null},
+  {uza:"Baltimore, MD",     short:"Baltimore, MD",      ridership:4157405,    pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:12.9646, ada:null},
+  {uza:"Boston, MA--NH",    short:"Boston, MA",         ridership:7610091.83, pass_rate:0.0905, work_rate:0.0219, fatalities:0, cost:9.3393,  ada:null},
+  {uza:"Chicago, IL--IN",   short:"Chicago, IL",        ridership:16443977,   pass_rate:0.0917, work_rate:0.0405, fatalities:0, cost:7.7730,  ada:null},
+  {uza:"Dallas--Fort Worth--Arlington, TX", short:"Dallas, TX", ridership:2865106.83, pass_rate:0.0605, work_rate:0.0000, fatalities:0, cost:15.0291, ada:null},
+  {uza:"Denver--Aurora, CO", short:"Denver, CO",        ridership:3738335.83, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:13.6277, ada:null},
+  {uza:"Detroit, MI",       short:"Detroit, MI",        ridership:1612318.5,  pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:12.0817, ada:null},
+  {uza:"Houston, TX",       short:"Houston, TX",        ridership:5391050.17, pass_rate:0.2222, work_rate:0.0927, fatalities:0, cost:11.5921, ada:null},
+  {uza:"Las Vegas--Henderson--Paradise, NV", short:"Las Vegas, NV", ridership:4782938.67, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:6.1517, ada:null},
+  {uza:"Los Angeles--Long Beach--Anaheim, CA", short:"Los Angeles, CA", ridership:26841279.67, pass_rate:0.0754, work_rate:0.0186, fatalities:1, cost:8.0588, ada:null},
+  {uza:"Miami--Fort Lauderdale, FL", short:"Miami, FL", ridership:7581679,    pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:8.5215,  ada:null},
+  {uza:"Minneapolis--St. Paul, MN", short:"Minneapolis, MN", ridership:3291290, pass_rate:0.3604, work_rate:0.0506, fatalities:1, cost:14.7884, ada:null},
+  {uza:"New York--Jersey City--Newark, NY--NJ", short:"New York, NY", ridership:78934567.33, pass_rate:0.0419, work_rate:0.0211, fatalities:1, cost:6.9203, ada:null},
+  {uza:"Philadelphia, PA--NJ--DE--MD", short:"Philadelphia, PA", ridership:10721697, pass_rate:0.0799, work_rate:0.0167, fatalities:0, cost:8.4746, ada:null},
+  {uza:"Phoenix--Mesa--Scottsdale, AZ", short:"Phoenix, AZ", ridership:2571423, pass_rate:0.1944, work_rate:0.0656, fatalities:1, cost:12.4980, ada:null},
+  {uza:"Portland, OR--WA",  short:"Portland, OR",       ridership:3932213.83, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:11.7450, ada:null},
+  {uza:"Riverside--San Bernardino, CA", short:"Riverside, CA", ridership:1149047, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:14.6631, ada:null},
+  {uza:"Sacramento, CA",    short:"Sacramento, CA",     ridership:892494,     pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:18.4606, ada:null},
+  {uza:"St. Louis, MO--IL", short:"St. Louis, MO",      ridership:895668.33,  pass_rate:0.0000, work_rate:0.0000, fatalities:1, cost:15.0734, ada:null},
+  {uza:"San Antonio, TX",   short:"San Antonio, TX",    ridership:2621817.17, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:8.5491,  ada:null},
+  {uza:"San Diego, CA",     short:"San Diego, CA",      ridership:3712597,    pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:7.6539,  ada:null},
+  {uza:"San Francisco--Oakland, CA", short:"San Francisco, CA", ridership:14834954, pass_rate:0.0458, work_rate:0.0118, fatalities:0, cost:9.4391, ada:null},
+  {uza:"Seattle--Tacoma, WA", short:"Seattle, WA",      ridership:9795419,    pass_rate:0.0174, work_rate:0.0000, fatalities:0, cost:12.9273, ada:null},
+  {uza:"Tampa--St. Petersburg, FL", short:"Tampa, FL",  ridership:1701459,    pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:9.9457,  ada:null},
+  {uza:"Washington--Arlington, DC--VA--MD", short:"Washington, DC", ridership:11349126, pass_rate:0.0153, work_rate:0.0000, fatalities:0, cost:11.1382, ada:null},
+];
+
+const railData = [
+  {uza:"Atlanta, GA",       short:"Atlanta, GA",       ridership:3168639,    pass_rate:0.2365, work_rate:0.0000, fatalities:0, cost:9.0092,  ada:1.0000},
+  {uza:"Baltimore, MD",     short:"Baltimore, MD",      ridership:795511,     pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:19.3222, ada:1.0000},
+  {uza:"Boston, MA--NH",    short:"Boston, MA",         ridership:10729007,   pass_rate:0.0933, work_rate:0.0156, fatalities:1, cost:5.5374,  ada:0.7538},
+  {uza:"Chicago, IL--IN",   short:"Chicago, IL",        ridership:9855521,    pass_rate:0.3276, work_rate:0.1353, fatalities:3, cost:6.5530,  ada:0.7123},
+  {uza:"Dallas--Fort Worth--Arlington, TX", short:"Dallas, TX", ridership:1749500.5, pass_rate:0.3059, work_rate:0.1905, fatalities:0, cost:12.0642, ada:1.0000},
+  {uza:"Denver--Aurora, CO", short:"Denver, CO",        ridership:792678,     pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:14.6372, ada:1.0000},
+  {uza:"Detroit, MI",       short:"Detroit, MI",        ridership:167434.17,  pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:14.6009, ada:1.0000},
+  {uza:"Houston, TX",       short:"Houston, TX",        ridership:819104,     pass_rate:0.0000, work_rate:0.2208, fatalities:0, cost:7.5400,  ada:1.0000},
+  {uza:"Los Angeles--Long Beach--Anaheim, CA", short:"Los Angeles, CA", ridership:5671161, pass_rate:0.1809, work_rate:0.0000, fatalities:1, cost:13.2166, ada:1.0000},
+  {uza:"Miami--Fort Lauderdale, FL", short:"Miami, FL", ridership:1996000,    pass_rate:0.1677, work_rate:0.0000, fatalities:0, cost:6.8700,  ada:1.0000},
+  {uza:"Minneapolis--St. Paul, MN", short:"Minneapolis, MN", ridership:960078.83, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:6.4641, ada:1.0000},
+  {uza:"New York--Jersey City--Newark, NY--NJ", short:"New York, NY", ridership:199513869.67, pass_rate:0.0508, work_rate:0.0317, fatalities:13, cost:3.0119, ada:0.3926},
+  {uza:"Philadelphia, PA--NJ--DE--MD", short:"Philadelphia, PA", ridership:7525684, pass_rate:0.0679, work_rate:0.0000, fatalities:1, cost:5.9397, ada:0.3878},
+  {uza:"Phoenix--Mesa--Scottsdale, AZ", short:"Phoenix, AZ", ridership:1038641, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:7.2929, ada:1.0000},
+  {uza:"Portland, OR--WA",  short:"Portland, OR",       ridership:2055032.83, pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:10.1314, ada:1.0000},
+  {uza:"Sacramento, CA",    short:"Sacramento, CA",     ridership:614797,     pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:13.0385, ada:1.0000},
+  {uza:"St. Louis, MO--IL", short:"St. Louis, MO",      ridership:567493.5,   pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:15.0339, ada:1.0000},
+  {uza:"San Diego, CA",     short:"San Diego, CA",      ridership:3400598,    pass_rate:0.1484, work_rate:0.0000, fatalities:0, cost:4.2262,  ada:1.0000},
+  {uza:"San Francisco--Oakland, CA", short:"San Francisco, CA", ridership:8499629, pass_rate:0.0601, work_rate:0.0621, fatalities:1, cost:13.0515, ada:1.0000},
+  {uza:"Seattle--Tacoma, WA", short:"Seattle, WA",      ridership:3560822,    pass_rate:0.0942, work_rate:0.0000, fatalities:0, cost:10.6828, ada:1.0000},
+  {uza:"Tampa--St. Petersburg, FL", short:"Tampa, FL",  ridership:122448,     pass_rate:0.0000, work_rate:0.0000, fatalities:0, cost:2.4949,  ada:1.0000},
+  {uza:"Washington--Arlington, DC--VA--MD", short:"Washington, DC", ridership:13716772.67, pass_rate:0.0126, work_rate:0.0365, fatalities:3, cost:11.9383, ada:1.0000},
+];
+
+const ROWS = 10;
+let currentMode = 'bus';
+let currentData = [...busData];
+let sortKey = 'ridership';
+let sortDir = -1;
+let currentPage = 0;
+
+/* max values for bar scaling — recalculated on mode switch */
+let maxRidership, maxPassRate, maxWorkRate, maxCost;
+
+function recalcMaxes() {
+  maxRidership = Math.max(...currentData.map(d => d.ridership));
+  maxPassRate  = Math.max(...currentData.map(d => d.pass_rate), 0.001);
+  maxWorkRate  = Math.max(...currentData.map(d => d.work_rate), 0.001);
+  maxCost      = Math.max(...currentData.map(d => d.cost));
+}
+
+function buildHeader() {
+  const isBus = currentMode === 'bus';
+  const cols = [
+    {key:'short',      label:'UZA'},
+    {key:'ridership',  label:'UPT (6 MRA)'},
+    {key:'pass_rate',  label:'Passenger Assault Rate'},
+    {key:'work_rate',  label:'Worker Assault Rate'},
+    {key:'fatalities', label:'Total Fatalities'},
+    {key:'cost',       label:'Cost Per Passenger'},
+    ...(isBus ? [] : [{key:'ada', label:'% ADA Accessible'}]),
+  ];
+  document.getElementById('thead').innerHTML =
+    '<tr>' + cols.map(c => `
+      <th onclick="sortBy('${c.key}')" id="th-${c.key}" ${c.key===sortKey?'class="sorted"':''}>
+        ${c.label} <span class="sort-icon" id="si-${c.key}">${c.key===sortKey?(sortDir===-1?'↓':'↑'):'↕'}</span>
+      </th>`).join('') + '</tr>';
+}
+
+function buildTable() {
+  const total = currentData.length;
+  const start = currentPage * ROWS;
+  const end   = Math.min(start + ROWS, total);
+  const rows  = currentData.slice(start, end);
+  const isBus = currentMode === 'bus';
+
+  document.getElementById('table-body').innerHTML = rows.map(d => {
+    const passCell = d.pass_rate === 0
+      ? '<span class="zero">—</span>'
+      : `<span class="plain-val">${d.pass_rate.toFixed(4)}</span>`;
+
+    const workCell = d.work_rate === 0
+      ? '<span class="zero">—</span>'
+      : `<span class="plain-val">${d.work_rate.toFixed(4)}</span>`;
+
+    const fatCell = d.fatalities === 0
+      ? '<span class="zero">—</span>'
+      : `<span class="plain-val">${d.fatalities}</span>`;
+
+    const costCell = `<span class="plain-val">$${d.cost.toFixed(2)}</span>`;
+
+    const adaCell = isBus ? '' : (d.ada === null ? '<span class="zero">—</span>'
+      : `<span class="plain-val">${(d.ada*100).toFixed(1)}%</span>`);
+
+    return `<tr>
+      <td><div class="uza-name">${d.short}</div><div class="uza-full">${d.uza}</div></td>
+      <td>${Math.round(d.ridership).toLocaleString()}</td>
+      <td class="bar-cell">${passCell}</td>
+      <td class="bar-cell">${workCell}</td>
+      <td style="text-align:center">${fatCell}</td>
+      <td class="bar-cell">${costCell}</td>
+      ${isBus ? '' : `<td style="text-align:center">${adaCell}</td>`}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('page-info').textContent = (start+1) + '–' + end + ' of ' + total;
+  document.getElementById('prev-btn').disabled = currentPage === 0;
+  document.getElementById('next-btn').disabled = end >= total;
+
+  /* update sort icons */
+  document.querySelectorAll('.data-table th').forEach(th => {
+    const k = th.id.replace('th-','');
+    const si = document.getElementById('si-'+k);
+    if (!si) return;
+    if (k === sortKey) { th.classList.add('sorted'); si.textContent = sortDir===-1?'↓':'↑'; }
+    else { th.classList.remove('sorted'); si.textContent = '↕'; }
+  });
+}
+
+function sortBy(key) {
+  if (sortKey === key) { sortDir *= -1; }
+  else { sortKey = key; sortDir = (key==='short'||key==='uza') ? 1 : -1; }
+  currentData = [...currentData].sort((a,b) => {
+    const av = a[key], bv = b[key];
+    if (av === null && bv === null) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * (bv - av);
+  });
+  currentPage = 0;
+  buildHeader();
+  buildTable();
+}
+
+function changePage(dir) {
+  const maxPage = Math.ceil(currentData.length / ROWS) - 1;
+  currentPage = Math.max(0, Math.min(currentPage + dir, maxPage));
+  buildTable();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  const isBus = mode === 'bus';
+  document.getElementById('btn-bus').classList.toggle('active', isBus);
+  document.getElementById('btn-rail').classList.toggle('active', !isBus);
+  document.getElementById('table-title').textContent = isBus ? 'Top UZA Bus Safety Profiles' : 'Top UZA Rail Safety Profiles';
+  document.getElementById('dl-label').textContent    = isBus ? 'Download Bus CSV' : 'Download Rail CSV';
+  currentData = isBus ? [...busData] : [...railData];
+  sortKey = 'ridership'; sortDir = -1;
+  currentPage = 0;
+  recalcMaxes();
+  buildHeader();
+  buildTable();
+}
+
+function downloadCSV() {
+  const isBus = currentMode === 'bus';
+  const adaCol = isBus ? '' : ',ADA Accessible (%)';
+  const header = `UZA,Short Name,UPT (6 MRA),Passenger Assault Rate,Worker Assault Rate,Total Fatalities,Cost Per Passenger${adaCol}`;
+  const rows = currentData.map(d => {
+    const ada = isBus ? '' : `,${d.ada !== null ? (d.ada*100).toFixed(1)+'%' : ''}`;
+    return `"${d.uza}","${d.short}",${Math.round(d.ridership)},${d.pass_rate.toFixed(4)},${d.work_rate.toFixed(4)},${d.fatalities},${d.cost.toFixed(4)}${ada}`;
+  });
+  const blob = new Blob([[header,...rows].join('\n'), {type:'text/csv'}]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (isBus ? 'bus' : 'rail') + '_top_uza_profiles.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+switchMode('bus');
+</script>
+</body>
+</html>

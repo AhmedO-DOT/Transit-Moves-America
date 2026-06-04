@@ -1,0 +1,389 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADA Station Accessibility</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: #fff; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased; font-size: 14px;
+}
+.page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+/* Header */
+.header-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;
+}
+.chart-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #5a6472; margin-bottom: 0.3rem;
+}
+.chart-sublabel { font-size: 12px; color: #8c96a0; font-weight: 500; }
+
+/* View toggle */
+.view-toggle {
+  display: flex; border: 1px solid #c5d4e3; border-radius: 8px;
+  overflow: hidden; width: fit-content; flex-shrink: 0;
+}
+.view-btn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 7px 16px; border: none; cursor: pointer;
+  background: #fff; color: #5a6472;
+  transition: background 0.15s, color 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.view-btn.active { background: #1a3a5c; color: #fff; }
+.view-btn svg {
+  width: 13px; height: 13px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Chart */
+.chart-outer {
+  width: 100%; border: 1px solid #e8ecf0; border-radius: 10px;
+  padding: 1.25rem 1rem 0.75rem; background: #fafbfc;
+}
+.chart-container { position: relative; height: 360px; }
+
+/* Panels */
+.chart-panel { display: block; }
+.chart-panel.hidden { display: none; }
+.table-panel { display: none; }
+.table-panel.visible { display: block; }
+
+/* Table */
+.table-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.65rem; flex-wrap: wrap; gap: 8px;
+}
+.section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #5a6472;
+}
+.pagination-row { display: flex; align-items: center; gap: 8px; }
+.page-btn {
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid #c5d4e3; background: #fff; color: #1a3a5c;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.page-btn:hover:not(:disabled) { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+.page-info { font-size: 11px; color: #7a8490; font-weight: 700; white-space: nowrap; }
+
+.tbl-wrap { width: 100%; overflow-x: auto; }
+.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px;
+}
+.data-table th {
+  text-align: left; padding: 9px 13px;
+  background: #1a3a5c; color: #fff;
+  font-weight: 700; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.07em; white-space: nowrap; cursor: pointer;
+  user-select: none; transition: background 0.12s;
+}
+.data-table th:hover { background: #2a5080; }
+.data-table th.sorted { background: #3b7fc4; }
+.sort-icon { margin-left: 4px; opacity: 0.6; font-size: 10px; }
+.data-table td {
+  padding: 8px 13px; border-bottom: 1px solid #eef1f5;
+  color: #2b3340; font-size: 13px; vertical-align: middle;
+}
+.data-table tr:nth-child(even) td { background: #f7fafd; }
+.data-table tr:hover td { background: #edf4fc; }
+.data-table tr:last-child td { border-bottom: none; }
+
+.pill {
+  display: inline-block; padding: 2px 9px; border-radius: 5px;
+  font-size: 11.5px; font-weight: 700;
+}
+.pill-blue  { background: #e8f0f8; color: #1a3a5c; }
+.pill-green { background: #e8f5ee; color: #1a6e3c; }
+.pill-amber { background: #fef6e4; color: #b7650a; }
+.pill-red   { background: #fdecea; color: #c0392b; }
+
+/* ADA bar in table */
+.ada-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+.ada-track { flex: 1; height: 7px; background: #eef1f5; border-radius: 4px; overflow: hidden; }
+.ada-fill  { height: 100%; border-radius: 4px; background: #3b7fc4; }
+.ada-pct   { font-size: 11.5px; font-weight: 700; color: #1a3a5c; min-width: 48px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header-row">
+    <div>
+      <div class="chart-label">ADA Station Accessibility </div>
+      <div class="chart-sublabel">The number of places where everyone can board has grown nearly 10% since 2014</div>
+    </div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-chart" onclick="switchView('chart')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>
+        Chart
+      </button>
+      <button class="view-btn" id="btn-table" onclick="switchView('table')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        Table
+      </button>
+    </div>
+  </div>
+
+  <!-- Chart view -->
+  <div class="chart-panel" id="chart-panel">
+    <div class="chart-outer">
+      <div class="chart-container">
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table view -->
+  <div class="table-panel" id="table-panel">
+    <div class="table-controls">
+      <div class="section-title">Agency ADA Station Profiles</div>
+      <div class="pagination-row">
+        <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
+        <span class="page-info" id="page-info">1–15 of 58</span>
+        <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th onclick="sortBy('agency')"  id="th-agency">Agency <span class="sort-icon" id="si-agency">↕</span></th>
+          <th onclick="sortBy('ada')"     id="th-ada">ADA Stations <span class="sort-icon" id="si-ada">↓</span></th>
+          <th onclick="sortBy('nonada')"  id="th-nonada">Non-ADA Stations <span class="sort-icon" id="si-nonada">↕</span></th>
+          <th onclick="sortBy('pct')"     id="th-pct">% ADA Accessible <span class="sort-icon" id="si-pct">↕</span></th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+/* Time-series data from CSV */
+const years   = [2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024];
+const percADA = [68.26,71.91,72.91,73.40,73.75,76.12,76.76,76.32,76.88,77.57,78.24];
+const adaCount    = [1456,1500,1564,1587,1613,1788,1820,1853,1919,1968,2014];
+const nonAdaCount = [677,586,581,575,574,561,551,575,577,569,560];
+
+/* Agency data from CSV */
+const agencyData = [
+  {agency:"MTA New York City Transit",ada:150,nonada:322,pct:31.78},
+  {agency:"Chicago Transit Authority",ada:104,nonada:42,pct:71.23},
+  {agency:"Los Angeles County Metropolitan Transportation Authority",ada:103,nonada:0,pct:100.0},
+  {agency:"Massachusetts Bay Transportation Authority",ada:98,nonada:32,pct:75.38},
+  {agency:"Washington Metropolitan Area Transit Authority",ada:98,nonada:0,pct:100.0},
+  {agency:"Tri-County Metropolitan Transportation District of Oregon",ada:96,nonada:0,pct:100.0},
+  {agency:"Dallas Area Rapid Transit",ada:71,nonada:0,pct:100.0},
+  {agency:"City of Portland",ada:68,nonada:0,pct:100.0},
+  {agency:"San Diego Metropolitan Transit System",ada:63,nonada:0,pct:100.0},
+  {agency:"Santa Clara Valley Transportation Authority",ada:62,nonada:0,pct:100.0},
+  {agency:"Metropolitan Transit Authority of Harris County, Texas",ada:61,nonada:0,pct:100.0},
+  {agency:"Utah Transit Authority",ada:60,nonada:0,pct:100.0},
+  {agency:"Valley Metro Rail, Inc.",ada:60,nonada:0,pct:100.0},
+  {agency:"New Jersey Transit Corporation",ada:58,nonada:4,pct:93.55},
+  {agency:"Denver Regional Transportation District",ada:57,nonada:0,pct:100.0},
+  {agency:"San Francisco Bay Area Rapid Transit District",ada:53,nonada:0,pct:100.0},
+  {agency:"Pittsburgh Regional Transit",ada:52,nonada:38,pct:57.78},
+  {agency:"Metropolitan Atlanta Rapid Transit Authority",ada:50,nonada:0,pct:100.0},
+  {agency:"Central Puget Sound Regional Transit Authority",ada:49,nonada:0,pct:100.0},
+  {agency:"Maryland Transit Administration",ada:47,nonada:0,pct:100.0},
+  {agency:"Southeastern Pennsylvania Transportation Authority",ada:44,nonada:90,pct:32.84},
+  {agency:"County of Miami-Dade",ada:44,nonada:0,pct:100.0},
+  {agency:"Sacramento Regional Transit District",ada:44,nonada:0,pct:100.0},
+  {agency:"City of Charlotte North Carolina",ada:43,nonada:0,pct:100.0},
+  {agency:"Bi-State Development Agency of the Missouri-Illinois Metropolitan District",ada:38,nonada:0,pct:100.0},
+  {agency:"Metro Transit",ada:37,nonada:0,pct:100.0},
+  {agency:"The Greater Cleveland Regional Transit Authority",ada:35,nonada:17,pct:67.31},
+  {agency:"King County",ada:25,nonada:0,pct:100.0},
+  {agency:"Central Oklahoma Transportation and Parking Authority",ada:22,nonada:0,pct:100.0},
+  {agency:"M-1 Rail",ada:20,nonada:0,pct:100.0},
+  {agency:"City of Milwaukee",ada:20,nonada:0,pct:100.0},
+  {agency:"Niagara Frontier Transportation Authority",ada:19,nonada:0,pct:100.0},
+  {agency:"City of Cincinnati",ada:18,nonada:0,pct:100.0},
+  {agency:"Alternativa de Transporte Integrado",ada:16,nonada:0,pct:100.0},
+  {agency:"North County Transit District",ada:15,nonada:0,pct:100.0},
+  {agency:"Port Authority Transit Corporation",ada:13,nonada:0,pct:100.0},
+  {agency:"Detroit Transportation Corporation",ada:13,nonada:0,pct:100.0},
+  {agency:"Loop Trolley Transportation Development District",ada:13,nonada:0,pct:100.0},
+  {agency:"City and County of San Francisco",ada:12,nonada:0,pct:100.0},
+  {agency:"Transportation District Commission of Hampton Roads",ada:11,nonada:0,pct:100.0},
+  {agency:"Hillsborough Area Regional Transit Authority",ada:11,nonada:0,pct:100.0},
+  {agency:"City and County of Honolulu",ada:9,nonada:0,pct:100.0},
+  {agency:"Jacksonville Transportation Authority",ada:8,nonada:0,pct:100.0},
+  {agency:"City of Memphis",ada:7,nonada:0,pct:100.0},
+  {agency:"Staten Island Rapid Transit Operating Authority",ada:6,nonada:15,pct:28.57},
+  {agency:"West Virginia University",ada:5,nonada:0,pct:100.0},
+  {agency:"City of Seattle",ada:2,nonada:0,pct:100.0},
+  {agency:"Cambria County Transit Authority",ada:2,nonada:0,pct:100.0},
+  {agency:"Chattanooga Area Regional Transportation Authority",ada:2,nonada:0,pct:100.0},
+  {agency:"District Department of Transportation",ada:0,nonada:0,pct:0.0},
+  {agency:"City of Kenosha",ada:0,nonada:0,pct:0.0},
+  {agency:"City of El Paso",ada:0,nonada:0,pct:0.0},
+  {agency:"City of Galveston",ada:0,nonada:0,pct:0.0},
+  {agency:"New Orleans Regional Transit Authority",ada:0,nonada:0,pct:0.0},
+  {agency:"Rock Region Metropolitan Transit Authority",ada:0,nonada:0,pct:0.0},
+  {agency:"McKinney Avenue Transit Authority",ada:0,nonada:0,pct:0.0},
+  {agency:"Kansas City, City of Missouri",ada:0,nonada:0,pct:0.0},
+  {agency:"City of Tucson",ada:0,nonada:0,pct:0.0}
+];
+
+const ROWS = 15;
+let sortKey = 'ada';
+let sortDir = -1;
+let currentPage = 0;
+
+function pctPill(pct) {
+  const cls = pct === 100 ? 'pill-green' : pct >= 75 ? 'pill-blue' : pct >= 50 ? 'pill-amber' : 'pill-red';
+  return `<span class="pill ${cls}">${pct.toFixed(2)}%</span>`;
+}
+
+function buildTable() {
+  const sorted = [...agencyData].sort((a,b) => {
+    if (sortKey === 'agency') return sortDir * a.agency.localeCompare(b.agency);
+    return sortDir * (b[sortKey] - a[sortKey]);
+  });
+  const total = sorted.length;
+  const start = currentPage * ROWS;
+  const end   = Math.min(start + ROWS, total);
+  const rows  = sorted.slice(start, end);
+
+  document.getElementById('table-body').innerHTML = rows.map(d => `
+    <tr>
+      <td>${d.agency}</td>
+      <td><span class="pill pill-blue">${d.ada.toLocaleString()}</span></td>
+      <td>${d.nonada > 0 ? '<span class="pill pill-red">'+d.nonada+'</span>' : '<span style="color:#c8cdd4">—</span>'}</td>
+      <td>
+        <div class="ada-bar-wrap">
+          <div class="ada-track"><div class="ada-fill" style="width:${d.pct}%"></div></div>
+          ${pctPill(d.pct)}
+        </div>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('page-info').textContent = (start+1)+'–'+end+' of '+total;
+  document.getElementById('prev-btn').disabled = currentPage === 0;
+  document.getElementById('next-btn').disabled = end >= total;
+
+  ['agency','ada','nonada','pct'].forEach(k => {
+    const th = document.getElementById('th-'+k);
+    const si = document.getElementById('si-'+k);
+    if (!th||!si) return;
+    if (k === sortKey) { th.classList.add('sorted'); si.textContent = sortDir===1?'↑':'↓'; }
+    else { th.classList.remove('sorted'); si.textContent = '↕'; }
+  });
+}
+
+function sortBy(key) {
+  if (sortKey === key) { sortDir *= -1; }
+  else { sortKey = key; sortDir = key === 'agency' ? 1 : -1; }
+  currentPage = 0;
+  buildTable();
+}
+
+function changePage(dir) {
+  const max = Math.ceil(agencyData.length / ROWS) - 1;
+  currentPage = Math.max(0, Math.min(currentPage + dir, max));
+  buildTable();
+}
+
+function switchView(view) {
+  const isChart = view === 'chart';
+  document.getElementById('btn-chart').classList.toggle('active', isChart);
+  document.getElementById('btn-table').classList.toggle('active', !isChart);
+  document.getElementById('chart-panel').classList.toggle('hidden', !isChart);
+  document.getElementById('table-panel').classList.toggle('visible', !isChart);
+}
+
+function buildChart() {
+  const canvas = document.getElementById('myChart');
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: years,
+      datasets: [
+        {
+          label: 'ADA Accessible (%)',
+          data: percADA,
+          backgroundColor: '#3b7fc4cc',
+          borderColor: '#3b7fc4',
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: 'yPct'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: '#1a3a5c',
+          titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,0.85)',
+          padding: 12,
+          cornerRadius: 6,
+          callbacks: {
+            title: i => 'Year ' + i[0].label,
+            label: i => '  ADA Accessible: ' + i.raw.toFixed(2) + '%',
+            afterLabel: i => {
+              const idx = years.indexOf(Number(i.label));
+              return [
+                '  ADA Stations: ' + adaCount[idx].toLocaleString(),
+                '  Non-ADA Stations: ' + nonAdaCount[idx].toLocaleString(),
+                '  Total Stations: ' + (adaCount[idx] + nonAdaCount[idx]).toLocaleString()
+              ];
+            }
+          },
+          bodyFont:  { family: FONT, size: 11, weight: '600' },
+          titleFont: { family: FONT, size: 12, weight: '700' }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            font: { family: FONT, size: 10, weight: '700' },
+            color: '#4a5568'
+          },
+          grid: { display: false },
+          border: { color: '#dde4eb' }
+        },
+        yPct: {
+          min: 0, max: 100,
+          ticks: {
+            font: { family: FONT, size: 9, weight: '700' },
+            color: '#4a5568',
+            callback: v => v + '%'
+          },
+          grid: { color: '#f0f3f6' },
+          border: { dash: [3,3], color: 'transparent' },
+          title: {
+            display: true,
+            text: '% ADA Accessible Stations',
+            font: { family: FONT, size: 10, weight: '700' },
+            color: '#4a5568'
+          }
+        }
+      }
+    }
+  });
+}
+
+buildChart();
+buildTable();
+</script>
+</body>
+</html>

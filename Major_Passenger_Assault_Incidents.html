@@ -1,0 +1,486 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transit Passenger Safety — Agency Profiles</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: #fff; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased; font-size: 14px;
+}
+.page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+.toggle-row {
+  display: flex; margin-bottom: 1.5rem;
+  border: 1px solid #c5d4e3; border-radius: 8px; overflow: hidden; width: fit-content;
+}
+.toggle-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 8px 28px; border: none; cursor: pointer;
+  background: #fff; color: #5a6472;
+  transition: background 0.15s, color 0.15s; letter-spacing: 0.01em;
+}
+.toggle-btn.active { background: #1a3a5c; color: #fff; }
+
+.chart-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #5a6472; margin-bottom: 0.9rem;
+}
+.chart-outer {
+  width: 100%;
+  border: 1px solid #e8ecf0; border-radius: 10px;
+  padding: 1rem 1rem 0.5rem; background: #fafbfc;
+}
+.chart-container { position: relative; height: 420px; }
+
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 1.75rem 0 0.65rem;
+}
+.section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #5a6472;
+}
+.controls-row { display: flex; align-items: center; gap: 8px; }
+.dl-btn {
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 5px 13px; border: 1px solid #c5d4e3; border-radius: 6px;
+  background: #fff; color: #1a3a5c; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s; letter-spacing: 0.01em;
+}
+.dl-btn:hover { background: #f0f5fb; }
+.dl-btn svg {
+  width: 13px; height: 13px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.page-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid #c5d4e3; background: #fff; color: #1a3a5c;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.page-btn:hover:not(:disabled) { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+.page-info { font-size: 11px; color: #7a8490; font-weight: 600; white-space: nowrap; }
+
+.tbl-wrap { width: 100%; overflow-x: auto; }
+.data-table {
+  width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px;
+}
+.data-table th {
+  text-align: left; padding: 9px 11px;
+  border-bottom: 1px solid #dde4eb; color: #1a3a5c;
+  font-weight: 700; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.07em; cursor: pointer; white-space: nowrap;
+  user-select: none; background: #fff; transition: color 0.12s;
+}
+.data-table th:hover { color: #3b7fc4; }
+.data-table th.sorted { color: #3b7fc4; }
+.sort-icon { margin-left: 4px; opacity: 0.35; font-size: 10px; }
+.data-table th.sorted .sort-icon { opacity: 1; }
+.data-table td {
+  padding: 8px 11px; border-bottom: 1px solid #f0f3f6;
+  color: #2b3340; font-size: 13px;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f7fafd; }
+.muted { color: #8c96a0; }
+.rate-pill {
+  display: inline-block; padding: 2px 9px; border-radius: 5px;
+  font-size: 11.5px; font-weight: 700; background: #e8f0f8;
+  color: #1a3a5c; letter-spacing: 0.01em;
+}
+.zero { color: #c8cdd4; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="toggle-row">
+    <button class="toggle-btn active" id="btn-bus" onclick="switchMode('bus')">Bus</button>
+    <button class="toggle-btn" id="btn-rail" onclick="switchMode('rail')">Rail</button>
+  </div>
+
+  <div class="chart-label" id="chart-title">Major Passenger Assault &amp; Homicide Events per 1M UPT — Bus Agencies</div>
+  <div class="chart-outer">
+    <div class="chart-container">
+      <canvas id="myChart" role="img" aria-label="Monthly bar chart of passenger assault and homicide events per 1M UPT"></canvas>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title" id="table-title">Bus Agency Profiles</div>
+    <div class="controls-row">
+      <button class="dl-btn" onclick="downloadCSV()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span id="dl-label">Download Bus CSV</span>
+      </button>
+      <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
+      <span class="page-info" id="page-info">1–10 of 120</span>
+      <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="data-table">
+      <thead><tr>
+        <th onclick="sortBy('name')"     id="th-name">Agency <span class="sort-icon" id="si-name">↕</span></th>
+        <th onclick="sortBy('city')"     id="th-city">UZA <span class="sort-icon" id="si-city">↕</span></th>
+        <th onclick="sortBy('riderNum')" id="th-riderNum">UPT (6 MRA) <span class="sort-icon" id="si-riderNum">↕</span></th>
+        <th onclick="sortBy('rate')"     id="th-rate">Rate (6 MRA) <span class="sort-icon" id="si-rate">↕</span></th>
+        <th onclick="sortBy('count')"    id="th-count">Count (6 MRA) <span class="sort-icon" id="si-count">↕</span></th>
+      </tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+/* ── Monthly trend data (Feb 2023 – Jan 2026) ── */
+const months = ["Feb 2023","Mar 2023","Apr 2023","May 2023","Jun 2023","Jul 2023","Aug 2023","Sep 2023","Oct 2023","Nov 2023","Dec 2023","Jan 2024","Feb 2024","Mar 2024","Apr 2024","May 2024","Jun 2024","Jul 2024","Aug 2024","Sep 2024","Oct 2024","Nov 2024","Dec 2024","Jan 2025","Feb 2025","Mar 2025","Apr 2025","May 2025","Jun 2025","Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025","Jan 2026"];
+
+const busMonthlyRates  = [0.182,0.198,0.205,0.214,0.228,0.241,0.245,0.220,0.210,0.188,0.172,0.195,0.185,0.201,0.208,0.222,0.231,0.238,0.235,0.218,0.212,0.178,0.165,0.180,0.188,0.197,0.204,0.215,0.224,0.232,0.228,0.214,0.208,0.192,0.176,0.184];
+const railMonthlyRates = [0.310,0.352,0.368,0.381,0.395,0.412,0.408,0.374,0.355,0.328,0.302,0.338,0.318,0.345,0.360,0.375,0.390,0.402,0.398,0.372,0.360,0.325,0.298,0.322,0.335,0.348,0.362,0.378,0.392,0.405,0.395,0.368,0.355,0.318,0.290,0.310];
+
+/* ── Agency data ── */
+const busData = [
+  {name:"King County Metro (KCM)",city:"Seattle, WA",riderNum:7633746.67,rate:0.0873,count:0.6667},
+  {name:"Spokane Transit Authority (STA)",city:"Spokane, WA",riderNum:914106.17,rate:0.0,count:0.0},
+  {name:"Pierce Transit",city:"Seattle, WA",riderNum:660958.67,rate:0.0,count:0.0},
+  {name:"TriMet",city:"Portland, OR",riderNum:3644873.17,rate:0.0915,count:0.3333},
+  {name:"Municipality of Anchorage",city:"Anchorage, AK",riderNum:292813.83,rate:0.0,count:0.0},
+  {name:"Ben Franklin Transit (BFT)",city:"Kennewick, WA",riderNum:304329.33,rate:0.0,count:0.0},
+  {name:"Intercity Transit (I.T.)",city:"Olympia, WA",riderNum:429919.67,rate:0.0,count:0.0},
+  {name:"Kitsap Transit (KT)",city:"Bremerton, WA",riderNum:171276.0,rate:0.0,count:0.0},
+  {name:"C-TRAN",city:"Portland, OR",riderNum:442564.83,rate:0.0,count:0.0},
+  {name:"Community Transit (CT)",city:"Seattle, WA",riderNum:813673.33,rate:0.2048,count:0.1667},
+  {name:"Sound Transit (ST)",city:"Seattle, WA",riderNum:813339.0,rate:0.4098,count:0.3333},
+  {name:"RIPTA (RIPTA)",city:"Providence, RI",riderNum:1010478.17,rate:0.0,count:0.0},
+  {name:"Massachusetts Bay Transportation Authority (MBTA)",city:"Boston, MA",riderNum:7981447.67,rate:0.2088,count:1.6667},
+  {name:"Pioneer Valley Transit Authority (PVTA)",city:"Springfield, MA",riderNum:880690.5,rate:0.0,count:0.0},
+  {name:"Greater Hartford Transit District (GHTD)",city:"Hartford, CT",riderNum:41278.33,rate:0.0,count:0.0},
+  {name:"CTTransit",city:"Hartford, CT",riderNum:994436.0,rate:0.0,count:0.0},
+  {name:"CTTransit",city:"New Haven, CT",riderNum:511970.0,rate:0.0,count:0.0},
+  {name:"Montachusett Regional Transit Authority (MART)",city:"Leominster, MA",riderNum:105848.0,rate:0.0,count:0.0},
+  {name:"Capital District Transportation Authority (CDTA)",city:"Albany, NY",riderNum:1495769.83,rate:0.0,count:0.0},
+  {name:"NFTA - Metro Bus & Rail (NFTA)",city:"Buffalo, NY",riderNum:1164136.17,rate:0.0,count:0.0},
+  {name:"MTA New York City Transit (NYCT)",city:"New York, NY",riderNum:56020782.0,rate:0.0595,count:3.3333},
+  {name:"New York Regional Transportation Authority (CNYRTA)",city:"Syracuse, NY",riderNum:711231.33,rate:0.4687,count:0.3333},
+  {name:"Suffolk County Transit (SCT)",city:"New York, NY",riderNum:354242.5,rate:0.0,count:0.0},
+  {name:"Westchester County - Bee Line",city:"New York, NY",riderNum:2080734.0,rate:0.0,count:0.0},
+  {name:"New Jersey Transit Corporation (NJ TRANSIT)",city:"New York, NY",riderNum:11355998.0,rate:0.0587,count:0.6667},
+  {name:"Regional Transit Service (RTS)",city:"Rochester, NY",riderNum:942374.0,rate:0.0,count:0.0},
+  {name:"MTA Bus Company (MTABUS)",city:"New York, NY",riderNum:11001529.33,rate:0.0757,count:0.8333},
+  {name:"Nassau Inter County Express (NICE)",city:"New York, NY",riderNum:1618065.5,rate:0.0,count:0.0},
+  {name:"Greater Richmond Transit Company (GRTC)",city:"Richmond, VA",riderNum:1037898.0,rate:0.0,count:0.0},
+  {name:"Southeastern Pennsylvania Transportation Authority (SEPTA)",city:"Philadelphia, PA",riderNum:9837588.0,rate:0.1525,count:1.5},
+  {name:"Pittsburgh Regional Transit (PRT)",city:"Pittsburgh, PA",riderNum:2975554.33,rate:0.3361,count:1.0},
+  {name:"Washington Metro (WMATA)",city:"Washington, DC",riderNum:9527905.83,rate:0.3673,count:3.5},
+  {name:"MTA (MTA)",city:"Baltimore, MD",riderNum:1667918.5,rate:0.0,count:0.0},
+  {name:"Ride On (MCDOT)",city:"Washington, DC",riderNum:1621104.0,rate:0.0,count:0.0},
+  {name:"Fairfax Connector Bus System",city:"Washington, DC",riderNum:788950.5,rate:0.0,count:0.0},
+  {name:"OmniRide (PRTC)",city:"Washington, DC",riderNum:275433.67,rate:0.0,count:0.0},
+  {name:"Delaware Transit Corporation (DTC)",city:"Philadelphia, PA",riderNum:657072.17,rate:0.5073,count:0.3333},
+  {name:"Hampton Roads Transit (HRT)",city:"Virginia Beach, VA",riderNum:706549.0,rate:0.0,count:0.0},
+  {name:"rabbittransit (SRTA)",city:"Harrisburg, PA",riderNum:271975.5,rate:0.0,count:0.0},
+  {name:"WeGo Public Transit (MTA)",city:"Nashville-Davidson, TN",riderNum:812431.67,rate:0.0,count:0.0},
+  {name:"GoRaleigh",city:"Raleigh, NC",riderNum:686864.17,rate:0.0,count:0.0},
+  {name:"City of Charlotte North Carolina (CATS)",city:"Charlotte, NC",riderNum:783790.67,rate:0.4253,count:0.3333},
+  {name:"Transit Authority of River City (TARC)",city:"Louisville/Jefferson County, KY",riderNum:560232.17,rate:0.0,count:0.0},
+  {name:"Metropolitan Atlanta Rapid Transit Authority (MARTA)",city:"Atlanta, GA",riderNum:2962324.67,rate:0.0,count:0.0},
+  {name:"Pinellas Suncoast Transit Authority (PSTA)",city:"Tampa, FL",riderNum:832009.5,rate:0.0,count:0.0},
+  {name:"Broward County Transit Division (BCT)",city:"Miami, FL",riderNum:1953745.17,rate:0.0,count:0.0},
+  {name:"County of Miami-Dade (DTPW)",city:"Miami, FL",riderNum:4876245.83,rate:0.0342,count:0.1667},
+  {name:"Central Florida Regional Transportation Authority (LYNX)",city:"Orlando, FL",riderNum:1830209.67,rate:0.0,count:0.0},
+  {name:"Palm Tran, Inc.",city:"Miami, FL",riderNum:787404.67,rate:0.0,count:0.0},
+  {name:"Jacksonville Transportation Authority (JTA)",city:"Jacksonville, FL",riderNum:564655.5,rate:0.0,count:0.0},
+  {name:"Hillsborough Area Regional Transit Authority (HART)",city:"Tampa, FL",riderNum:881322.0,rate:0.0,count:0.0},
+  {name:"Breeze Transit",city:"Bradenton, FL",riderNum:197913.0,rate:0.0,count:0.0},
+  {name:"Puerto Rico Highway and Transportation Authority (PRHTA)",city:"San Juan, PR",riderNum:209442.33,rate:0.0,count:0.0},
+  {name:"The COMET (CMRTA)",city:"Columbia, SC",riderNum:255464.5,rate:0.0,count:0.0},
+  {name:"Mecklenburg Transportation System (MCTS)",city:"Charlotte, NC",riderNum:22214.5,rate:0.0,count:0.0},
+  {name:"Atlanta-Region Transit Link Authority (ATL)",city:"Atlanta, GA",riderNum:94965.33,rate:0.0,count:0.0},
+  {name:"City of Madison",city:"Madison, WI",riderNum:1078966.0,rate:0.0,count:0.0},
+  {name:"Milwaukee County Transit System (MCTS)",city:"Milwaukee, WI",riderNum:1988881.0,rate:0.0,count:0.0},
+  {name:"METRO Regional Transit Authority (METRO)",city:"Akron, OH",riderNum:492218.33,rate:0.0,count:0.0},
+  {name:"Metro / Access (SORTA)",city:"Cincinnati, OH",riderNum:1143296.5,rate:0.0,count:0.0},
+  {name:"The Greater Cleveland Regional Transit Authority (GCRTA)",city:"Cleveland, OH",riderNum:1726373.83,rate:0.1931,count:0.3333},
+  {name:"Central Ohio Transit Authority (COTA)",city:"Columbus, OH",riderNum:1068146.83,rate:0.156,count:0.1667},
+  {name:"Metro Transit",city:"Minneapolis, MN",riderNum:3202372.83,rate:0.7286,count:2.3333},
+  {name:"Suburban Mobility Authority for Regional Transportation (SMART)",city:"Detroit, MI",riderNum:639937.17,rate:0.0,count:0.0},
+  {name:"MTA Flint (MTA)",city:"Flint, MI",riderNum:257729.17,rate:0.0,count:0.0},
+  {name:"The Rapid (ITP)",city:"Grand Rapids, MI",riderNum:573619.0,rate:0.0,count:0.0},
+  {name:"Ann Arbor Area Transportation Authority (AAATA)",city:"Ann Arbor, MI",riderNum:473521.17,rate:0.0,count:0.0},
+  {name:"IndyGo (IPTC)",city:"Indianapolis, IN",riderNum:571849.83,rate:0.0,count:0.0},
+  {name:"Champaign-Urbana Mass Transit District (C-U MTD)",city:"Champaign, IL",riderNum:1072571.5,rate:0.0,count:0.0},
+  {name:"Chicago Transit Authority (CTA)",city:"Chicago, IL",riderNum:16485551.5,rate:0.273,count:4.5},
+  {name:"Pace Suburban Bus",city:"Chicago, IL",riderNum:1445480.0,rate:0.6918,count:1.0},
+  {name:"Detroit Department of Transportation (DDOT)",city:"Detroit, MI",riderNum:1147429.33,rate:0.0,count:0.0},
+  {name:"Blue Water Area Transit (BWATC)",city:"Port Huron, MI",riderNum:86902.0,rate:0.0,count:0.0},
+  {name:"Metropolitan Council (MC)",city:"Minneapolis, MN",riderNum:429760.17,rate:0.0,count:0.0},
+  {name:"Pace Suburban Bus (Dial-a-Ride)",city:"Chicago, IL",riderNum:266294.83,rate:0.0,count:0.0},
+  {name:"MichiVan",city:"Detroit, MI",riderNum:37508.0,rate:0.0,count:0.0},
+  {name:"Minnesota Valley Transit Authority (MVTA)",city:"Minneapolis, MN",riderNum:150395.5,rate:0.0,count:0.0},
+  {name:"Trinity Metro (FWTA)",city:"Dallas, TX",riderNum:475654.0,rate:0.3504,count:0.1667},
+  {name:"METRO",city:"Houston, TX",riderNum:5606187.17,rate:0.5351,count:3.0},
+  {name:"VIA",city:"San Antonio, TX",riderNum:2719140.0,rate:0.0,count:0.0},
+  {name:"Capital Metro (CMTA)",city:"Austin, TX",riderNum:2101140.67,rate:0.0793,count:0.1667},
+  {name:"Dallas Area Rapid Transit (DART)",city:"Dallas, TX",riderNum:2558326.17,rate:0.0651,count:0.1667},
+  {name:"Denton County Transportation Authority (DCTA)",city:"Denton, TX",riderNum:236860.33,rate:0.0,count:0.0},
+  {name:"El Paso Transportation Authority (ETA)",city:"El Paso, TX",riderNum:43780.0,rate:0.0,count:0.0},
+  {name:"South Central Arkansas Transit (CADC-SCAT)",city:"Little Rock, AR",riderNum:28134.83,rate:0.0,count:0.0},
+  {name:"NMGo! (NMDOT)",city:"Las Cruces, NM",riderNum:19227.33,rate:0.0,count:0.0},
+  {name:"Kansas City Area Transportation Authority (KCATA)",city:"Kansas City, MO",riderNum:957244.5,rate:0.0,count:0.0},
+  {name:"(St. Louis) Metro",city:"St. Louis, MO",riderNum:979557.67,rate:0.3403,count:0.3333},
+  {name:"Utah Transit Authority (UTA)",city:"Salt Lake City, UT",riderNum:1957936.67,rate:0.0851,count:0.1667},
+  {name:"RTD-Denver (RTD)",city:"Denver, CO",riderNum:3846721.17,rate:0.0,count:0.0},
+  {name:"Denver Regional Council of Governments (DRCOG)",city:"Denver, CO",riderNum:12852.5,rate:0.0,count:0.0},
+  {name:"Regional Transportation Commission of Washoe County (RTC)",city:"Reno, NV",riderNum:575938.67,rate:0.0,count:0.0},
+  {name:"City and County of Honolulu (DTS)",city:"Honolulu, HI",riderNum:3678590.67,rate:0.0453,count:0.1667},
+  {name:"Big Blue Bus (BBB)",city:"Los Angeles, CA",riderNum:835474.17,rate:0.0,count:0.0},
+  {name:"SamTrans (SMCTD)",city:"San Francisco, CA",riderNum:936934.83,rate:0.1779,count:0.1667},
+  {name:"Valley Transportation Authority (VTA)",city:"San Jose, CA",riderNum:2069976.0,rate:0.3221,count:0.6667},
+  {name:"AC Transit",city:"San Francisco, CA",riderNum:3433796.17,rate:0.1941,count:0.6667},
+  {name:"San Francisco Municipal Transportation Agency (SFMTA)",city:"San Francisco, CA",riderNum:10930431.17,rate:0.244,count:2.6667},
+  {name:"Sacramento RT",city:"Sacramento, CA",riderNum:889259.83,rate:0.0,count:0.0},
+  {name:"Long Beach Transit (LBT)",city:"Los Angeles, CA",riderNum:1700648.0,rate:0.0,count:0.0},
+  {name:"San Diego Metropolitan Transit System (MTS)",city:"San Diego, CA",riderNum:3243333.5,rate:0.0,count:0.0},
+  {name:"Fresno Area Express (FAX)",city:"Fresno, CA",riderNum:873128.5,rate:0.3818,count:0.3333},
+  {name:"OMNI",city:"Riverside, CA",riderNum:663998.0,rate:0.0,count:0.0},
+  {name:"North County Transit District (NCTD)",city:"San Diego, CA",riderNum:471519.83,rate:0.3535,count:0.1667},
+  {name:"Riverside Transit Agency (RTA)",city:"Riverside, CA",riderNum:537721.17,rate:0.0,count:0.0},
+  {name:"Valley Metro",city:"Phoenix, AZ",riderNum:1649744.33,rate:0.0,count:0.0},
+  {name:"Sun Tran (COT)",city:"Tucson, AZ",riderNum:1403346.83,rate:0.2375,count:0.3333},
+  {name:"Orange County Transportation Authority (OCTA)",city:"Los Angeles, CA",riderNum:2963954.0,rate:0.1687,count:0.5},
+  {name:"Regional Transportation Commission of Southern Nevada (RTC)",city:"Las Vegas, NV",riderNum:4885193.83,rate:0.0682,count:0.3333},
+  {name:"MTC (MTC)",city:"San Francisco, CA",riderNum:86525.5,rate:0.0,count:0.0},
+  {name:"SANDAG (SANDAG)",city:"San Diego, CA",riderNum:77310.17,rate:0.0,count:0.0},
+  {name:"Valley Metro (RPTA)",city:"Phoenix, AZ",riderNum:918592.67,rate:0.0,count:0.0},
+  {name:"Foothill Transit",city:"Los Angeles, CA",riderNum:869896.17,rate:0.0,count:0.0},
+  {name:"City of Los Angeles (LADOT)",city:"Los Angeles, CA",riderNum:1064775.5,rate:0.1565,count:0.1667},
+  {name:"Victor Valley Transit Authority (VVTA)",city:"Victorville, CA",riderNum:157186.33,rate:0.0,count:0.0},
+  {name:"Metro (LACMTA)",city:"Los Angeles, CA",riderNum:19891735.0,rate:0.3351,count:6.6667},
+  {name:"Access Services (AS)",city:"Los Angeles, CA",riderNum:415327.67,rate:0.0,count:0.0},
+  {name:"CalVans (CVA)",city:"Visalia, CA",riderNum:202352.5,rate:0.0,count:0.0},
+  {name:"StanisCruise (StanCOG)",city:"Modesto, CA",riderNum:15465.83,rate:0.0,count:0.0},
+  {name:"Dibs (SJCOG)",city:"Stockton, CA",riderNum:57189.17,rate:0.0,count:0.0}
+].sort((a,b) => b.rate - a.rate);
+
+const railData = [
+  {name:"King County Metro (KCM)",city:"Seattle, WA",riderNum:126654.17,rate:0.0,count:0.0},
+  {name:"TriMet",city:"Portland, OR",riderNum:1785006.0,rate:0.5602,count:1.0},
+  {name:"Seattle Center Monorail (SMS)",city:"Seattle, WA",riderNum:197321.67,rate:0.0,count:0.0},
+  {name:"Sound Transit (ST)",city:"Seattle, WA",riderNum:3456252.0,rate:0.1929,count:0.6667},
+  {name:"Portland Streetcar (PBOT)",city:"Portland, OR",riderNum:338713.0,rate:0.0,count:0.0},
+  {name:"Massachusetts Bay Transportation Authority (MBTA)",city:"Boston, MA",riderNum:11941785.0,rate:0.1396,count:1.6667},
+  {name:"NFTA - Metro Bus & Rail (NFTA)",city:"Buffalo, NY",riderNum:205823.5,rate:0.0,count:0.0},
+  {name:"MTA New York City Transit (NYCT)",city:"New York, NY",riderNum:196093480.0,rate:0.1045,count:20.5},
+  {name:"Port Authority Transit Corporation (PATCO)",city:"Philadelphia, PA",riderNum:480906.83,rate:0.0,count:0.0},
+  {name:"New Jersey Transit Corporation (NJ TRANSIT)",city:"New York, NY",riderNum:1865775.0,rate:0.0,count:0.0},
+  {name:"MTA Staten Island Railway (SIRTOA)",city:"New York, NY",riderNum:442783.83,rate:0.0,count:0.0},
+  {name:"Southeastern Pennsylvania Transportation Authority (SEPTA)",city:"Philadelphia, PA",riderNum:7050171.0,rate:0.7328,count:5.1667},
+  {name:"Pittsburgh Regional Transit (PRT)",city:"Pittsburgh, PA",riderNum:272703.83,rate:0.6112,count:0.1667},
+  {name:"Washington Metro (WMATA)",city:"Washington, DC",riderNum:14828200.0,rate:0.0562,count:0.8333},
+  {name:"MTA (MTA)",city:"Baltimore, MD",riderNum:811053.83,rate:0.0,count:0.0},
+  {name:"Hampton Roads Transit (HRT)",city:"Virginia Beach, VA",riderNum:68511.83,rate:0.0,count:0.0},
+  {name:"Personal Rapid Transit",city:"Morgantown, WV",riderNum:167903.83,rate:0.0,count:0.0},
+  {name:"DC Circulator, DC Streetcar (DDOT)",city:"Washington, DC",riderNum:64402.33,rate:0.0,count:0.0},
+  {name:"Chattanooga Area Regional Transportation Authority (CARTA)",city:"Chattanooga, TN",riderNum:31253.33,rate:0.0,count:0.0},
+  {name:"City of Charlotte North Carolina (CATS)",city:"Charlotte, NC",riderNum:522875.83,rate:0.6375,count:0.3333},
+  {name:"Metropolitan Atlanta Rapid Transit Authority (MARTA)",city:"Atlanta, GA",riderNum:2669891.0,rate:1.0612,count:2.8333},
+  {name:"County of Miami-Dade (DTPW)",city:"Miami, FL",riderNum:1939240.0,rate:0.6876,count:1.3333},
+  {name:"Jacksonville Transportation Authority (JTA)",city:"Jacksonville, FL",riderNum:20948.33,rate:0.0,count:0.0},
+  {name:"Hillsborough Area Regional Transit Authority (HART)",city:"Tampa, FL",riderNum:103396.17,rate:0.0,count:0.0},
+  {name:"Autoridad de Transporte Integrado (PRHTA)",city:"San Juan, PR",riderNum:485148.17,rate:0.0,count:0.0},
+  {name:"Kenosha Area Transit (KAT)",city:"Kenosha, WI",riderNum:1838.17,rate:0.0,count:0.0},
+  {name:"The Greater Cleveland Regional Transit Authority (GCRTA)",city:"Cleveland, OH",riderNum:295991.83,rate:1.1262,count:0.3333},
+  {name:"Metro Transit",city:"Minneapolis, MN",riderNum:1045583.5,rate:1.1158,count:1.1667},
+  {name:"Chicago Transit Authority (CTA)",city:"Chicago, IL",riderNum:11709067.0,rate:0.9394,count:11.0},
+  {name:"Detroit People Mover (DTC)",city:"Detroit, MI",riderNum:103431.83,rate:0.0,count:0.0},
+  {name:"Regional Transit Authority of Southeast Michigan (RTA)",city:"Detroit, MI",riderNum:89775.0,rate:0.0,count:0.0},
+  {name:"The Connector",city:"Cincinnati, OH",riderNum:91752.17,rate:0.0,count:0.0},
+  {name:"Milwaukee Streetcar System - The Hop Streetcar MKE (MSS)",city:"Milwaukee, WI",riderNum:38280.83,rate:0.0,count:0.0},
+  {name:"Sun Metro",city:"El Paso, TX",riderNum:35390.83,rate:0.0,count:0.0},
+  {name:"METRO",city:"Houston, TX",riderNum:920270.67,rate:1.0866,count:1.0},
+  {name:"Galveston Island Transit (GIT)",city:"Galveston, TX",riderNum:1688.83,rate:0.0,count:0.0},
+  {name:"EMBARK (COTPA)",city:"Oklahoma City, OK",riderNum:15548.67,rate:0.0,count:0.0},
+  {name:"New Orleans Regional Transit Authority (NORTA)",city:"New Orleans, LA",riderNum:288894.17,rate:0.0,count:0.0},
+  {name:"Rock Region METRO",city:"Little Rock, AR",riderNum:4964.83,rate:0.0,count:0.0},
+  {name:"Dallas Area Rapid Transit (DART)",city:"Dallas, TX",riderNum:1801741.0,rate:1.48,count:2.6667},
+  {name:"McKinney Avenue Transit Authority (MATA)",city:"Dallas, TX",riderNum:22457.33,rate:0.0,count:0.0},
+  {name:"(St. Louis) Metro",city:"St. Louis, MO",riderNum:623068.17,rate:1.07,count:0.6667},
+  {name:"Loop Trolley Transportation Development District",city:"St. Louis, MO",riderNum:904.83,rate:0.0,count:0.0},
+  {name:"Kansas City Streetcar (KCMO)",city:"Kansas City, MO",riderNum:235366.0,rate:0.7081,count:0.1667},
+  {name:"Utah Transit Authority (UTA)",city:"Salt Lake City, UT",riderNum:1149109.0,rate:0.145,count:0.1667},
+  {name:"RTD-Denver (RTD)",city:"Denver, CO",riderNum:860898.5,rate:0.0,count:0.0},
+  {name:"City and County of Honolulu (DTS)",city:"Honolulu, HI",riderNum:219013.33,rate:0.0,count:0.0},
+  {name:"SF BART (BART)",city:"San Francisco, CA",riderNum:5300855.0,rate:0.0629,count:0.3333},
+  {name:"Valley Transportation Authority (VTA)",city:"San Jose, CA",riderNum:424022.33,rate:1.9653,count:0.8333},
+  {name:"San Francisco Municipal Transportation Agency (SFMTA)",city:"San Francisco, CA",riderNum:3509495.0,rate:0.19,count:0.6667},
+  {name:"Sacramento RT",city:"Sacramento, CA",riderNum:617798.67,rate:0.0,count:0.0},
+  {name:"San Diego Metropolitan Transit System (MTS)",city:"San Diego, CA",riderNum:3437993.0,rate:0.9211,count:3.1667},
+  {name:"North County Transit District (NCTD)",city:"San Diego, CA",riderNum:127192.67,rate:0.0,count:0.0},
+  {name:"Sun Tran (COT)",city:"Tucson, AZ",riderNum:126556.0,rate:0.0,count:0.0},
+  {name:"Metro (LACMTA)",city:"Los Angeles, CA",riderNum:5764111.0,rate:0.8964,count:5.1667},
+  {name:"Valley Metro Rail, Inc. (VMR)",city:"Phoenix, AZ",riderNum:1081308.0,rate:0.9248,count:1.0}
+].sort((a,b) => b.rate - a.rate);
+
+/* ── State ── */
+const ROWS = 10;
+let currentPage = 0;
+let currentData = [...busData];
+let currentMode = 'bus';
+let sortKey = 'rate';
+let sortDir = -1;
+let chart;
+
+const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+function buildChart(monthlyRates, color) {
+  const canvas = document.getElementById('myChart');
+  const ctx = canvas.getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        data: monthlyRates,
+        backgroundColor: color + 'b0',
+        borderColor: color,
+        borderWidth: 1, borderRadius: 3,
+        barPercentage: 0.75, categoryPercentage: 0.85
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a3a5c', titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,0.82)', padding: 10, cornerRadius: 6,
+          callbacks: {
+            title: i => months[i[0].dataIndex],
+            label: i => '  Rate: ' + i.raw.toFixed(4) + ' per 1M UPT'
+          },
+          bodyFont:  { family: FONT, size: 11, weight: '600' },
+          titleFont: { family: FONT, size: 12, weight: '700' }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            font: { family: FONT, size: 9, weight: '700' },
+            color: '#4a5568',
+            maxRotation: 90, minRotation: 90, autoSkip: false
+          },
+          grid:   { display: false },
+          border: { color: '#dde4eb' }
+        },
+        y: {
+          ticks: {
+            font: { family: FONT, size: 9, weight: '700' },
+            color: '#4a5568',
+            maxTicksLimit: 6
+          },
+          grid:   { color: '#f0f3f6' },
+          border: { dash: [3,3], color: 'transparent' },
+          title: {
+            display: true,
+            text: 'Events / 1M UPT',
+            font: { family: FONT, size: 10, weight: '700' },
+            color: '#4a5568'
+          }
+        }
+      }
+    }
+  });
+}
+
+function buildTable() {
+  const total = currentData.length;
+  const start = currentPage * ROWS;
+  const end   = Math.min(start + ROWS, total);
+  const rows  = currentData.slice(start, end);
+
+  document.getElementById('table-body').innerHTML = rows.map(d => `
+    <tr>
+      <td>${d.name}</td>
+      <td class="muted">${d.city}</td>
+      <td>${Math.round(d.riderNum).toLocaleString()}</td>
+      <td>${d.rate > 0 ? '<span class="rate-pill">' + d.rate.toFixed(4) + '</span>' : '<span class="zero">—</span>'}</td>
+      <td>${d.count > 0 ? d.count.toFixed(2) : '<span class="zero">—</span>'}</td>
+    </tr>`).join('');
+
+  document.getElementById('page-info').textContent = (start+1) + '–' + end + ' of ' + total;
+  document.getElementById('prev-btn').disabled = currentPage === 0;
+  document.getElementById('next-btn').disabled = end >= total;
+
+  ['name','city','riderNum','rate','count'].forEach(k => {
+    const th = document.getElementById('th-'+k);
+    const si = document.getElementById('si-'+k);
+    if (!th||!si) return;
+    if (k === sortKey) { th.classList.add('sorted'); si.textContent = sortDir===1?'↑':'↓'; }
+    else { th.classList.remove('sorted'); si.textContent = '↕'; }
+  });
+}
+
+function sortBy(key) {
+  if (sortKey === key) { sortDir *= -1; }
+  else { sortKey = key; sortDir = (key==='rate'||key==='riderNum'||key==='count') ? -1 : 1; }
+  currentData = [...currentData].sort((a,b) => {
+    const av = a[key], bv = b[key];
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * (bv - av);
+  });
+  currentPage = 0;
+  buildTable();
+}
+
+function changePage(dir) {
+  const maxPage = Math.ceil(currentData.length / ROWS) - 1;
+  currentPage = Math.max(0, Math.min(currentPage + dir, maxPage));
+  buildTable();
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  const isBus = mode === 'bus';
+  document.getElementById('btn-bus').classList.toggle('active', isBus);
+  document.getElementById('btn-rail').classList.toggle('active', !isBus);
+  document.getElementById('chart-title').textContent = isBus
+    ? 'Major Passenger Assault Events — Bus Agencies'
+    : 'Major Passenger Assault Events — Rail Agencies';
+  document.getElementById('table-title').textContent = isBus ? 'Bus Agency Profiles' : 'Rail Agency Profiles';
+  document.getElementById('dl-label').textContent = isBus ? 'Download Bus CSV' : 'Download Rail CSV';
+  currentData = isBus ? [...busData] : [...railData];
+  sortKey = 'rate'; sortDir = -1;
+  currentPage = 0;
+  buildChart(isBus ? busMonthlyRates : railMonthlyRates, isBus ? '#3b7fc4' : '#1a3a5c');
+  buildTable();
+}
+
+function downloadCSV() {
+  const header = 'Agency,UZA,UPT (6 MRA),Rate (6 MRA),Count (6 MRA)';
+  const rows = currentData.map(d =>
+    `"${d.name}","${d.city}",${Math.round(d.riderNum)},${d.rate.toFixed(4)},${d.count.toFixed(4)}`
+  );
+  const blob = new Blob([[header,...rows].join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (currentMode === 'bus' ? 'bus' : 'rail') + '_passenger_safety_profiles.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+switchMode('bus');
+</script>
+</body>
+</html>
