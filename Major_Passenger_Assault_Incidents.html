@@ -10,11 +10,18 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   background: #fff; color: #1a1a1a;
   -webkit-font-smoothing: antialiased; font-size: 14px;
+  overflow: hidden;
 }
-.page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+.page { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem; }
+
+/* Top controls row — bus/rail toggle + chart/table toggle side by side */
+.top-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px;
+}
 
 .toggle-row {
-  display: flex; margin-bottom: 1.5rem;
+  display: flex;
   border: 1px solid #c5d4e3; border-radius: 8px; overflow: hidden; width: fit-content;
 }
 .toggle-btn {
@@ -25,6 +32,29 @@ html, body {
 }
 .toggle-btn.active { background: #1a3a5c; color: #fff; }
 
+/* View toggle (chart/table) */
+.view-toggle {
+  display: flex; border: 1px solid #c5d4e3; border-radius: 8px; overflow: hidden; width: fit-content;
+}
+.view-btn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 7px 16px; border: none; cursor: pointer;
+  background: #fff; color: #5a6472;
+  transition: background 0.15s, color 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.view-btn.active { background: #1a3a5c; color: #fff; }
+.view-btn svg {
+  width: 13px; height: 13px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Panels */
+.chart-panel { display: block; }
+.chart-panel.hidden { display: none; }
+.table-panel { display: none; }
+.table-panel.visible { display: block; }
+
 .chart-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.09em; color: #5a6472; margin-bottom: 0.9rem;
@@ -34,11 +64,12 @@ html, body {
   border: 1px solid #e8ecf0; border-radius: 10px;
   padding: 1rem 1rem 0.5rem; background: #fafbfc;
 }
-.chart-container { position: relative; height: 420px; }
+.chart-container { position: relative; height: 360px; }
 
+/* Table panel header */
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin: 1.75rem 0 0.65rem;
+  margin-bottom: 0.65rem;
 }
 .section-title {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -101,54 +132,70 @@ html, body {
 <body>
 <div class="page">
 
-  <div class="toggle-row">
-    <button class="toggle-btn active" id="btn-bus" onclick="switchMode('bus')">Bus</button>
-    <button class="toggle-btn" id="btn-rail" onclick="switchMode('rail')">Rail</button>
-  </div>
-
-  <div class="chart-label" id="chart-title">Major Passenger Assault &amp; Homicide Events per 1M UPT — Bus Agencies</div>
-  <div class="chart-outer">
-    <div class="chart-container">
-      <canvas id="myChart" role="img" aria-label="Monthly bar chart of passenger assault and homicide events per 1M UPT"></canvas>
+  <div class="top-controls">
+    <!-- Bus / Rail toggle -->
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btn-bus" onclick="switchMode('bus')">Bus</button>
+      <button class="toggle-btn" id="btn-rail" onclick="switchMode('rail')">Rail</button>
     </div>
-  </div>
-
-  <div class="section-header">
-    <div class="section-title" id="table-title">Bus Agency Profiles</div>
-    <div class="controls-row">
-      <button class="dl-btn" onclick="downloadCSV()">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span id="dl-label">Download Bus CSV</span>
+    <!-- Chart / Table view toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-chart" onclick="switchView('chart')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg>
+        Chart
       </button>
-      <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
-      <span class="page-info" id="page-info">1–10 of 120</span>
-      <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+      <button class="view-btn" id="btn-table-view" onclick="switchView('table')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        Table
+      </button>
     </div>
   </div>
 
-  <div class="tbl-wrap">
-    <table class="data-table">
-      <thead><tr>
-        <th onclick="sortBy('name')"     id="th-name">Agency <span class="sort-icon" id="si-name">↕</span></th>
-        <th onclick="sortBy('city')"     id="th-city">UZA <span class="sort-icon" id="si-city">↕</span></th>
-        <th onclick="sortBy('riderNum')" id="th-riderNum">UPT (6 MRA) <span class="sort-icon" id="si-riderNum">↕</span></th>
-        <th onclick="sortBy('rate')"     id="th-rate">Rate (6 MRA) <span class="sort-icon" id="si-rate">↕</span></th>
-        <th onclick="sortBy('count')"    id="th-count">Count (6 MRA) <span class="sort-icon" id="si-count">↕</span></th>
-      </tr></thead>
-      <tbody id="table-body"></tbody>
-    </table>
+  <!-- Chart panel -->
+  <div class="chart-panel" id="chart-panel">
+    <div class="chart-label" id="chart-title">Major Passenger Assault &amp; Homicide Events per 1M UPT — Bus Agencies</div>
+    <div class="chart-outer">
+      <div class="chart-container">
+        <canvas id="myChart" role="img"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table panel -->
+  <div class="table-panel" id="table-panel">
+    <div class="section-header">
+      <div class="section-title" id="table-title">Bus Agency Profiles</div>
+      <div class="controls-row">
+        <button class="dl-btn" onclick="downloadCSV()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span id="dl-label">Download Bus CSV</span>
+        </button>
+        <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
+        <span class="page-info" id="page-info">1–10 of 120</span>
+        <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th onclick="sortBy('name')"     id="th-name">Agency <span class="sort-icon" id="si-name">↕</span></th>
+          <th onclick="sortBy('city')"     id="th-city">UZA <span class="sort-icon" id="si-city">↕</span></th>
+          <th onclick="sortBy('riderNum')" id="th-riderNum">UPT (6 MRA) <span class="sort-icon" id="si-riderNum">↕</span></th>
+          <th onclick="sortBy('rate')"     id="th-rate">Rate (6 MRA) <span class="sort-icon" id="si-rate">↕</span></th>
+          <th onclick="sortBy('count')"    id="th-count">Count (6 MRA) <span class="sort-icon" id="si-count">↕</span></th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
 
 <script>
-/* ── Monthly trend data (Feb 2023 – Jan 2026) ── */
 const months = ["Feb 2023","Mar 2023","Apr 2023","May 2023","Jun 2023","Jul 2023","Aug 2023","Sep 2023","Oct 2023","Nov 2023","Dec 2023","Jan 2024","Feb 2024","Mar 2024","Apr 2024","May 2024","Jun 2024","Jul 2024","Aug 2024","Sep 2024","Oct 2024","Nov 2024","Dec 2024","Jan 2025","Feb 2025","Mar 2025","Apr 2025","May 2025","Jun 2025","Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025","Jan 2026"];
-
 const busMonthlyRates  = [0.182,0.198,0.205,0.214,0.228,0.241,0.245,0.220,0.210,0.188,0.172,0.195,0.185,0.201,0.208,0.222,0.231,0.238,0.235,0.218,0.212,0.178,0.165,0.180,0.188,0.197,0.204,0.215,0.224,0.232,0.228,0.214,0.208,0.192,0.176,0.184];
 const railMonthlyRates = [0.310,0.352,0.368,0.381,0.395,0.412,0.408,0.374,0.355,0.328,0.302,0.338,0.318,0.345,0.360,0.375,0.390,0.402,0.398,0.372,0.360,0.325,0.298,0.322,0.335,0.348,0.362,0.378,0.392,0.405,0.395,0.368,0.355,0.318,0.290,0.310];
 
-/* ── Agency data ── */
 const busData = [
   {name:"King County Metro (KCM)",city:"Seattle, WA",riderNum:7633746.67,rate:0.0873,count:0.6667},
   {name:"Spokane Transit Authority (STA)",city:"Spokane, WA",riderNum:914106.17,rate:0.0,count:0.0},
@@ -331,15 +378,14 @@ const railData = [
   {name:"Valley Metro Rail, Inc. (VMR)",city:"Phoenix, AZ",riderNum:1081308.0,rate:0.9248,count:1.0}
 ].sort((a,b) => b.rate - a.rate);
 
-/* ── State ── */
 const ROWS = 10;
 let currentPage = 0;
 let currentData = [...busData];
 let currentMode = 'bus';
+let currentView = 'chart';
 let sortKey = 'rate';
 let sortDir = -1;
 let chart;
-
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 function buildChart(monthlyRates, color) {
@@ -350,55 +396,29 @@ function buildChart(monthlyRates, color) {
     type: 'bar',
     data: {
       labels: months,
-      datasets: [{
-        data: monthlyRates,
-        backgroundColor: color + 'b0',
-        borderColor: color,
-        borderWidth: 1, borderRadius: 3,
-        barPercentage: 0.75, categoryPercentage: 0.85
-      }]
+      datasets: [{ data: monthlyRates, backgroundColor: color+'b0', borderColor: color,
+        borderWidth:1, borderRadius:3, barPercentage:0.75, categoryPercentage:0.85 }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a3a5c', titleColor: '#fff',
-          bodyColor: 'rgba(255,255,255,0.82)', padding: 10, cornerRadius: 6,
+          mode: 'index', intersect: false,
+          backgroundColor:'#1a3a5c', titleColor:'#fff',
+          bodyColor:'rgba(255,255,255,0.82)', padding:10, cornerRadius:6,
           callbacks: {
             title: i => months[i[0].dataIndex],
-            label: i => '  Rate: ' + i.raw.toFixed(4) + ' per 1M UPT'
+            label: i => '  Rate: '+i.raw.toFixed(4)+' per 1M UPT'
           },
-          bodyFont:  { family: FONT, size: 11, weight: '600' },
-          titleFont: { family: FONT, size: 12, weight: '700' }
+          bodyFont: {family:FONT,size:11,weight:'600'},
+          titleFont:{family:FONT,size:12,weight:'700'}
         }
       },
       scales: {
-        x: {
-          ticks: {
-            font: { family: FONT, size: 9, weight: '700' },
-            color: '#4a5568',
-            maxRotation: 90, minRotation: 90, autoSkip: false
-          },
-          grid:   { display: false },
-          border: { color: '#dde4eb' }
-        },
-        y: {
-          ticks: {
-            font: { family: FONT, size: 9, weight: '700' },
-            color: '#4a5568',
-            maxTicksLimit: 6
-          },
-          grid:   { color: '#f0f3f6' },
-          border: { dash: [3,3], color: 'transparent' },
-          title: {
-            display: true,
-            text: 'Events / 1M UPT',
-            font: { family: FONT, size: 10, weight: '700' },
-            color: '#4a5568'
-          }
-        }
+        x: { ticks:{font:{family:FONT,size:9,weight:'700'},color:'#4a5568',maxRotation:90,minRotation:90,autoSkip:false}, grid:{display:false}, border:{color:'#dde4eb'} },
+        y: { ticks:{font:{family:FONT,size:9,weight:'700'},color:'#4a5568',maxTicksLimit:6}, grid:{color:'#f0f3f6'}, border:{dash:[3,3],color:'transparent'},
+          title:{display:true,text:'Events / 1M UPT',font:{family:FONT,size:10,weight:'700'},color:'#4a5568'} }
       }
     }
   });
@@ -409,75 +429,72 @@ function buildTable() {
   const start = currentPage * ROWS;
   const end   = Math.min(start + ROWS, total);
   const rows  = currentData.slice(start, end);
-
   document.getElementById('table-body').innerHTML = rows.map(d => `
     <tr>
       <td>${d.name}</td>
       <td class="muted">${d.city}</td>
       <td>${Math.round(d.riderNum).toLocaleString()}</td>
-      <td>${d.rate > 0 ? '<span class="rate-pill">' + d.rate.toFixed(4) + '</span>' : '<span class="zero">—</span>'}</td>
+      <td>${d.rate > 0 ? '<span class="rate-pill">'+d.rate.toFixed(4)+'</span>' : '<span class="zero">—</span>'}</td>
       <td>${d.count > 0 ? d.count.toFixed(2) : '<span class="zero">—</span>'}</td>
     </tr>`).join('');
-
-  document.getElementById('page-info').textContent = (start+1) + '–' + end + ' of ' + total;
+  document.getElementById('page-info').textContent = (start+1)+'–'+end+' of '+total;
   document.getElementById('prev-btn').disabled = currentPage === 0;
   document.getElementById('next-btn').disabled = end >= total;
-
   ['name','city','riderNum','rate','count'].forEach(k => {
     const th = document.getElementById('th-'+k);
     const si = document.getElementById('si-'+k);
     if (!th||!si) return;
     if (k === sortKey) { th.classList.add('sorted'); si.textContent = sortDir===1?'↑':'↓'; }
-    else { th.classList.remove('sorted'); si.textContent = '↕'; }
+    else { th.classList.remove('sorted'); si.textContent='↕'; }
   });
 }
 
 function sortBy(key) {
-  if (sortKey === key) { sortDir *= -1; }
-  else { sortKey = key; sortDir = (key==='rate'||key==='riderNum'||key==='count') ? -1 : 1; }
-  currentData = [...currentData].sort((a,b) => {
-    const av = a[key], bv = b[key];
-    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
-    return sortDir * (bv - av);
-  });
-  currentPage = 0;
-  buildTable();
+  if (sortKey===key) { sortDir*=-1; }
+  else { sortKey=key; sortDir=(key==='rate'||key==='riderNum'||key==='count')?-1:1; }
+  currentData=[...currentData].sort((a,b)=>{ const av=a[key],bv=b[key]; if(typeof av==='string') return sortDir*av.localeCompare(bv); return sortDir*(bv-av); });
+  currentPage=0; buildTable();
 }
 
 function changePage(dir) {
-  const maxPage = Math.ceil(currentData.length / ROWS) - 1;
-  currentPage = Math.max(0, Math.min(currentPage + dir, maxPage));
+  const maxPage = Math.ceil(currentData.length/ROWS)-1;
+  currentPage = Math.max(0,Math.min(currentPage+dir,maxPage));
   buildTable();
+}
+
+function switchView(view) {
+  currentView = view;
+  const isChart = view==='chart';
+  document.getElementById('btn-chart').classList.toggle('active', isChart);
+  document.getElementById('btn-table-view').classList.toggle('active', !isChart);
+  document.getElementById('chart-panel').classList.toggle('hidden', !isChart);
+  document.getElementById('table-panel').classList.toggle('visible', !isChart);
 }
 
 function switchMode(mode) {
   currentMode = mode;
-  const isBus = mode === 'bus';
+  const isBus = mode==='bus';
   document.getElementById('btn-bus').classList.toggle('active', isBus);
   document.getElementById('btn-rail').classList.toggle('active', !isBus);
   document.getElementById('chart-title').textContent = isBus
-    ? 'Major Passenger Assault Events — Bus Agencies'
-    : 'Major Passenger Assault Events — Rail Agencies';
+    ? 'Major Passenger Assault & Homicide Events per 1M UPT — Bus Agencies'
+    : 'Major Passenger Assault & Homicide Events per 1M UPT — Rail Agencies';
   document.getElementById('table-title').textContent = isBus ? 'Bus Agency Profiles' : 'Rail Agency Profiles';
   document.getElementById('dl-label').textContent = isBus ? 'Download Bus CSV' : 'Download Rail CSV';
   currentData = isBus ? [...busData] : [...railData];
-  sortKey = 'rate'; sortDir = -1;
-  currentPage = 0;
+  sortKey='rate'; sortDir=-1; currentPage=0;
   buildChart(isBus ? busMonthlyRates : railMonthlyRates, isBus ? '#3b7fc4' : '#1a3a5c');
   buildTable();
 }
 
 function downloadCSV() {
   const header = 'Agency,UZA,UPT (6 MRA),Rate (6 MRA),Count (6 MRA)';
-  const rows = currentData.map(d =>
-    `"${d.name}","${d.city}",${Math.round(d.riderNum)},${d.rate.toFixed(4)},${d.count.toFixed(4)}`
-  );
-  const blob = new Blob([[header,...rows].join('\n')], {type:'text/csv'});
+  const rows = currentData.map(d => `"${d.name}","${d.city}",${Math.round(d.riderNum)},${d.rate.toFixed(4)},${d.count.toFixed(4)}`);
+  const blob = new Blob([[header,...rows].join('\n')],{type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = (currentMode === 'bus' ? 'bus' : 'rail') + '_passenger_safety_profiles.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  a.download = (currentMode==='bus'?'bus':'rail')+'_passenger_safety_profiles.csv';
+  a.click(); URL.revokeObjectURL(a.href);
 }
 
 switchMode('bus');
