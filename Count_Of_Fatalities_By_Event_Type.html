@@ -2,7 +2,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Count of Fatalities by Event Type — All Modes</title>
+<title>Count of Fatalities by Incident Type — All Modes</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,22 +12,22 @@ html, body {
   -webkit-font-smoothing: antialiased; font-size: 14px;
 }
 .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-/* Header row */
 .header-row {
   display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;
 }
-.header-text {}
 .chart-label {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.09em; color: #5a6472; margin-bottom: 0.3rem;
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: #1a3a5c; margin-bottom: 0.3rem;
+  display: inline-flex; align-items: center; gap: 8px;
 }
-.chart-sublabel {
-  font-size: 12px; color: #8c96a0; font-weight: 500;
+.chart-label::before {
+  content: ''; display: inline-block;
+  width: 4px; height: 16px;
+  background: linear-gradient(180deg, #3b7fc4, #17a3a5);
+  border-radius: 2px; flex-shrink: 0;
 }
-
-/* View toggle */
+.chart-sublabel { font-size: 12px; color: #8c96a0; font-weight: 500; }
 .view-toggle {
   display: flex; border: 1px solid #c5d4e3; border-radius: 8px;
   overflow: hidden; width: fit-content; flex-shrink: 0;
@@ -42,33 +42,26 @@ html, body {
 .view-btn.active { background: #1a3a5c; color: #fff; }
 .view-btn svg {
   width: 13px; height: 13px; stroke: currentColor; fill: none;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  flex-shrink: 0;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
 }
-
-/* Chart panel */
 .chart-outer {
-  width: 100%;
-  border: 1px solid #e8ecf0; border-radius: 10px;
-  padding: 1.25rem 1rem 0.75rem; background: #fafbfc;
+  width: 100%; border: 1px solid #e8ecf0; border-radius: 10px;
+  padding: 1.25rem 1rem 0.75rem; background: #fafbfc; position: relative;
 }
-.chart-container { position: relative; height: 360px; }
-.legend-row {
-  display: flex; align-items: center; gap: 20px;
-  margin-top: 1rem; padding: 0 0.25rem; flex-wrap: wrap;
+.chart-container { position: relative; height: 380px; }
+.inline-legend {
+  display: flex; flex-wrap: wrap; gap: 6px 16px;
+  margin-bottom: 0.85rem;
 }
 .legend-item {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 12px; font-weight: 600; color: #4a5568;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 600; color: #4a5568;
 }
-.legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-
-/* Table panel */
+.legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
 .table-panel { display: none; }
 .table-panel.visible { display: block; }
 .chart-panel { display: block; }
 .chart-panel.hidden { display: none; }
-
 .table-controls {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 0.65rem; flex-wrap: wrap; gap: 8px;
@@ -76,6 +69,19 @@ html, body {
 .table-section-title {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.09em; color: #5a6472;
+}
+.controls-right { display: flex; align-items: center; gap: 8px; }
+.dl-btn {
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 5px 13px; border: 1px solid #c5d4e3; border-radius: 6px;
+  background: #fff; color: #1a3a5c; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s; letter-spacing: 0.01em;
+}
+.dl-btn:hover { background: #f0f5fb; }
+.dl-btn svg {
+  width: 13px; height: 13px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 .pagination-row { display: flex; align-items: center; gap: 8px; }
 .page-btn {
@@ -88,11 +94,8 @@ html, body {
 .page-btn:hover:not(:disabled) { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
 .page-btn:disabled { opacity: 0.3; cursor: default; }
 .page-info { font-size: 11px; color: #7a8490; font-weight: 700; white-space: nowrap; }
-
 .tbl-wrap { width: 100%; overflow-x: auto; }
-.data-table {
-  width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px;
-}
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
 .data-table th {
   text-align: left; padding: 9px 13px;
   background: #1a3a5c; color: #fff;
@@ -110,24 +113,15 @@ html, body {
 .data-table tr:nth-child(even) td { background: #f7fafd; }
 .data-table tr:hover td { background: #edf4fc; }
 .data-table tr:last-child td { border-bottom: none; }
-.pill {
-  display: inline-block; padding: 2px 9px; border-radius: 5px;
-  font-size: 11.5px; font-weight: 700;
-}
-.pill-security { background: #e8ecf4; color: #1a2744; }
-.pill-safety   { background: #deeaf6; color: #1a5a9a; }
-.pill-suicide  { background: #ede8f6; color: #5b2d9e; }
-.pill-total    { background: #1a3a5c; color: #fff; }
-.zero          { color: #c8cdd4; }
 </style>
 </head>
 <body>
 <div class="page">
 
   <div class="header-row">
-    <div class="header-text">
-      <div class="chart-label">Count of Fatalities by Event Type — National, All Modes</div>
-      <div class="chart-sublabel">Prevalence of fatalities on transit due to safety vs. security events</div>
+    <div>
+      <div class="chart-label">Count of Fatalities by Incident Type — National, All Modes</div>
+      <div class="chart-sublabel">Monthly fatality totals broken down by incident category</div>
     </div>
     <div class="view-toggle">
       <button class="view-btn active" id="btn-chart" onclick="switchView('chart')">
@@ -141,37 +135,32 @@ html, body {
     </div>
   </div>
 
-  <!-- Chart view -->
   <div class="chart-panel" id="chart-panel">
     <div class="chart-outer">
+      <div class="inline-legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:#1a2744"></div>Security (e.g. homicides)</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#4e8ec9"></div>Safety (e.g. collisions, derailments, fires)</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#9b6fd4"></div>Suicide and Trespass</div>
+      </div>
       <div class="chart-container">
         <canvas id="myChart" role="img"></canvas>
-      </div>
-      <div class="legend-row">
-        <div class="legend-item">
-          <div class="legend-swatch" style="background:#1a2744"></div>
-          Assault / Homicide / Security
-        </div>
-        <div class="legend-item">
-          <div class="legend-swatch" style="background:#4e8ec9"></div>
-          Non-Assault / Safety Fatalities
-        </div>
-        <div class="legend-item">
-          <div class="legend-swatch" style="background:#9b6fd4"></div>
-          Suicides
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- Table view -->
   <div class="table-panel" id="table-panel">
     <div class="table-controls">
       <div class="table-section-title">Monthly Breakdown — All Modes</div>
-      <div class="pagination-row">
-        <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
-        <span class="page-info" id="page-info">1–15 of 36</span>
-        <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+      <div class="controls-right">
+        <button class="dl-btn" onclick="downloadCSV()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download CSV
+        </button>
+        <div class="pagination-row">
+          <button class="page-btn" id="prev-btn" onclick="changePage(-1)" disabled>&#8592;</button>
+          <span class="page-info" id="page-info">1–8</span>
+          <button class="page-btn" id="next-btn" onclick="changePage(1)">&#8594;</button>
+        </div>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -179,9 +168,9 @@ html, body {
         <thead>
           <tr>
             <th onclick="sortBy('month')"    id="th-month">Month <span class="sort-icon" id="si-month">↑</span></th>
-            <th onclick="sortBy('security')" id="th-security">Assault / Security <span class="sort-icon" id="si-security">↕</span></th>
-            <th onclick="sortBy('safety')"   id="th-safety">Non-Assault / Safety <span class="sort-icon" id="si-safety">↕</span></th>
-            <th onclick="sortBy('suicide')"  id="th-suicide">Suicides <span class="sort-icon" id="si-suicide">↕</span></th>
+            <th onclick="sortBy('security')" id="th-security">Security (homicides) <span class="sort-icon" id="si-security">↕</span></th>
+            <th onclick="sortBy('safety')"   id="th-safety">Safety (collisions etc.) <span class="sort-icon" id="si-safety">↕</span></th>
+            <th onclick="sortBy('suicide')"  id="th-suicide">Suicide &amp; Trespass <span class="sort-icon" id="si-suicide">↕</span></th>
             <th onclick="sortBy('total')"    id="th-total">Total <span class="sort-icon" id="si-total">↕</span></th>
           </tr>
         </thead>
@@ -195,67 +184,139 @@ html, body {
 <script>
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-const months   = ["Jan 2023","Feb 2023","Mar 2023","Apr 2023","May 2023","Jun 2023","Jul 2023","Aug 2023","Sep 2023","Oct 2023","Nov 2023","Dec 2023","Jan 2024","Feb 2024","Mar 2024","Apr 2024","May 2024","Jun 2024","Jul 2024","Aug 2024","Sep 2024","Oct 2024","Nov 2024","Dec 2024","Jan 2025","Feb 2025","Mar 2025","Apr 2025","May 2025","Jun 2025","Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025"];
-const safety   = [20,30,16,14,17,21,15,16,12,20,26,22,30,17,15,20,22,12,20,16,14,17,14,21,19,22,16,23,16,20,19,21,19,17,21,22];
-const suicide  = [7,4,10,4,4,3,6,3,5,7,8,2,8,7,9,6,6,7,5,8,4,5,7,1,10,3,8,8,2,3,5,4,6,4,8,4];
-const security = [2,6,1,8,5,4,1,4,1,5,1,0,5,4,7,3,6,6,3,3,8,1,2,5,2,2,4,3,3,1,5,3,1,3,0,6];
+/* ============================================================
+   HARDCODED SNAPSHOT — built from sum_raw_value in the real API JSON,
+   sorted oldest → newest. Used if live fetch fails or returns empty.
 
-const ROWS = 15;
-let sortKey = 'month';
-let sortDir = 1;
-let currentPage = 0;
+   Jan 2023 → Dec 2025, reading sum_raw_value per event_type:
+   Security: 2,6,1,8,5,4,1,4,1,5,1,0,5,4,7,3,6,6,3,3,8,1,2,5,2,2,4,3,3,1,4,3,1,2,0,6
+   Safety:   7,15,5,6,7,9,7,8,8,15,16,6,17,6,9,6,12,4,10,7,8,7,9,9,10,4,7,12,10,7,6,8,11,10,9,9
+   Suicide:  19,18,18,12,14,11,13,9,9,12,18,17,20,16,14,18,16,15,14,17,10,12,11,12,17,17,16,17,8,15,17,16,13,11,18,15
+   ============================================================ */
+let months   = ["Jan 2023","Feb 2023","Mar 2023","Apr 2023","May 2023","Jun 2023","Jul 2023","Aug 2023","Sep 2023","Oct 2023","Nov 2023","Dec 2023","Jan 2024","Feb 2024","Mar 2024","Apr 2024","May 2024","Jun 2024","Jul 2024","Aug 2024","Sep 2024","Oct 2024","Nov 2024","Dec 2024","Jan 2025","Feb 2025","Mar 2025","Apr 2025","May 2025","Jun 2025","Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025"];
+let security = [2,6,1,8,5,4,1,4,1,5,1,0,5,4,7,3,6,6,3,3,8,1,2,5,2,2,4,3,3,1,4,3,1,2,0,6];
+let safety   = [7,15,5,6,7,9,7,8,8,15,16,6,17,6,9,6,12,4,10,7,8,7,9,9,10,4,7,12,10,7,6,8,11,10,9,9];
+let suicide  = [19,18,18,12,14,11,13,9,9,12,18,17,20,16,14,18,16,15,14,17,10,12,11,12,17,17,16,17,8,15,17,16,13,11,18,15];
 
-const tableData = months.map((m, i) => ({
-  month: m, monthIdx: i,
-  security: security[i], safety: safety[i], suicide: suicide[i],
-  total: security[i] + safety[i] + suicide[i]
-}));
+let tableData = [];
 
-let sortedData = [...tableData];
+/* ============================================================
+   LIVE FETCH
+   ============================================================ */
+const DATASET_ID = 'x9xf-v89q';
+const API_URL    = `https://datahub.transportation.gov/resource/${DATASET_ID}.json?$limit=50000`;
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+async function initData() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+
+    /* Field confirmed from real API response:
+         month_year    — "2023-01-01T00:00:00.000"
+         event_type    — exact string match below
+         sum_raw_value — raw monthly count; this is what the original chart plots */
+
+    const agg = {};
+
+    json.forEach(r => {
+      const dateStr = r.month_year;
+      if (!dateStr) return;
+
+      const parts = dateStr.split('T')[0].split('-');
+      const yr    = parseInt(parts[0], 10);
+      const mi    = parseInt(parts[1], 10) - 1;
+      const time  = new Date(yr, mi, 1).getTime();
+      const label = MONTH_ABBR[mi] + ' ' + yr;
+      const val   = parseInt(r.sum_raw_value, 10) || 0;
+      const cat   = String(r.event_type || '');
+
+      if (!agg[time]) agg[time] = { label, time, security: 0, safety: 0, suicide: 0 };
+
+      if (cat === 'Security (e.g. homicides)') {
+        agg[time].security = val;
+      } else if (cat === 'Safety (e.g. collisions, derailments, fires)') {
+        agg[time].safety = val;
+      } else if (cat === 'Suicide and Trespass') {
+        agg[time].suicide = val;
+      }
+    });
+
+    const sortedTimes = Object.keys(agg).map(Number).sort((a, b) => a - b);
+
+    if (sortedTimes.length > 0) {
+      months = []; security = []; safety = []; suicide = [];
+      sortedTimes.forEach(t => {
+        months.push(agg[t].label);
+        security.push(agg[t].security);
+        safety.push(agg[t].safety);
+        suicide.push(agg[t].suicide);
+      });
+    }
+
+  } catch (err) {
+    console.warn('DataHub fetch failed. Using embedded static snapshot.', err);
+  }
+
+  /* Table always built from whichever arrays are active after try/catch */
+  try {
+    tableData = months.map((m, i) => ({
+      month:    m,
+      monthIdx: i,
+      security: security[i] || 0,
+      safety:   safety[i]   || 0,
+      suicide:  suicide[i]  || 0,
+      total:   (security[i] || 0) + (safety[i] || 0) + (suicide[i] || 0)
+    }));
+  } catch (tableErr) {
+    console.warn('Table build failed.', tableErr);
+    tableData = [];
+  }
+
+  buildChart();
+  buildTable();
+}
+
+/* ============================================================
+   UI STATE & RENDERING
+   ============================================================ */
+const ROWS = 8;
+let sortKey = 'month', sortDir = 1, currentPage = 0;
+let chart;
 
 function buildTable() {
-  sortedData = [...tableData].sort((a, b) => {
+  const sorted = [...tableData].sort((a, b) => {
     if (sortKey === 'month') return sortDir * (a.monthIdx - b.monthIdx);
     return sortDir * (b[sortKey] - a[sortKey]);
   });
-
-  const total = sortedData.length;
-  const start = currentPage * ROWS;
-  const end   = Math.min(start + ROWS, total);
-  const rows  = sortedData.slice(start, end);
-
-  document.getElementById('table-body').innerHTML = rows.map(r => `
+  const total = sorted.length, start = currentPage * ROWS, end = Math.min(start + ROWS, total);
+  document.getElementById('table-body').innerHTML = sorted.slice(start, end).map(r => `
     <tr>
       <td><strong>${r.month}</strong></td>
-      <td>${r.security > 0 ? '<span class="pill pill-security">'+r.security+'</span>' : '<span class="zero">—</span>'}</td>
-      <td>${r.safety   > 0 ? '<span class="pill pill-safety">'+r.safety+'</span>'     : '<span class="zero">—</span>'}</td>
-      <td>${r.suicide  > 0 ? '<span class="pill pill-suicide">'+r.suicide+'</span>'   : '<span class="zero">—</span>'}</td>
-      <td><span class="pill pill-total">${r.total}</span></td>
+      <td>${r.security}</td>
+      <td>${r.safety}</td>
+      <td>${r.suicide}</td>
+      <td><strong>${r.total}</strong></td>
     </tr>`).join('');
-
-  document.getElementById('page-info').textContent = (start+1) + '–' + end + ' of ' + total;
+  document.getElementById('page-info').textContent = (start + 1) + '–' + end + ' of ' + total;
   document.getElementById('prev-btn').disabled = currentPage === 0;
   document.getElementById('next-btn').disabled = end >= total;
-
   ['month','security','safety','suicide','total'].forEach(k => {
-    const th = document.getElementById('th-'+k);
-    const si = document.getElementById('si-'+k);
-    if (!th||!si) return;
-    if (k === sortKey) { th.classList.add('sorted'); si.textContent = sortDir===1?'↑':'↓'; }
-    else { th.classList.remove('sorted'); si.textContent = '↕'; }
+    const th = document.getElementById('th-' + k), si = document.getElementById('si-' + k);
+    if (!th || !si) return;
+    th.classList.toggle('sorted', k === sortKey);
+    si.textContent = k === sortKey ? (sortDir === 1 ? '↑' : '↓') : '↕';
   });
 }
 
 function sortBy(key) {
-  if (sortKey === key) { sortDir *= -1; }
-  else { sortKey = key; sortDir = key === 'month' ? 1 : -1; }
-  currentPage = 0;
-  buildTable();
+  sortDir = sortKey === key ? sortDir * -1 : (key === 'month' ? 1 : -1);
+  sortKey = key; currentPage = 0; buildTable();
 }
 
 function changePage(dir) {
-  const maxPage = Math.ceil(tableData.length / ROWS) - 1;
-  currentPage = Math.max(0, Math.min(currentPage + dir, maxPage));
+  currentPage = Math.max(0, Math.min(currentPage + dir, Math.ceil(tableData.length / ROWS) - 1));
   buildTable();
 }
 
@@ -267,35 +328,47 @@ function switchView(view) {
   document.getElementById('table-panel').classList.toggle('visible', !isChart);
 }
 
+function downloadCSV() {
+  const header = 'Month,Security (homicides),Safety (collisions etc.),Suicide & Trespass,Total';
+  const rows = [...tableData]
+    .sort((a, b) => a.monthIdx - b.monthIdx)
+    .map(r => `${r.month},${r.security},${r.safety},${r.suicide},${r.total}`);
+  const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fatalities_by_incident_type.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
 function buildChart() {
   const canvas = document.getElementById('myChart');
   const ctx = canvas.getContext('2d');
-
-  new Chart(ctx, {
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: months,
       datasets: [
         {
-          label: 'Assault / Security',
+          label: 'Security (e.g. homicides)',
           data: security,
-          backgroundColor: '#1a2744cc',
+          backgroundColor: '#1a2744dd',
           borderColor: '#1a2744',
-          borderWidth: 1, borderRadius: 0, stack: 'f'
+          borderWidth: 0, borderRadius: 0, stack: 'f'
         },
         {
-          label: 'Non-Assault / Safety',
+          label: 'Safety (e.g. collisions, derailments, fires)',
           data: safety,
-          backgroundColor: '#4e8ec9cc',
+          backgroundColor: '#4e8ec9dd',
           borderColor: '#4e8ec9',
-          borderWidth: 1, borderRadius: 0, stack: 'f'
+          borderWidth: 0, borderRadius: 0, stack: 'f'
         },
         {
-          label: 'Suicides',
+          label: 'Suicide and Trespass',
           data: suicide,
-          backgroundColor: '#9b6fd4cc',
+          backgroundColor: '#9b6fd4dd',
           borderColor: '#9b6fd4',
-          borderWidth: 1,
+          borderWidth: 0,
           borderRadius: { topLeft: 3, topRight: 3, bottomLeft: 0, bottomRight: 0 },
           stack: 'f'
         }
@@ -304,26 +377,21 @@ function buildChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      events: ['mousemove','mouseout','click','touchstart','touchmove'],
       plugins: {
         legend: { display: false },
         tooltip: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: '#1a3a5c',
-          titleColor: '#fff',
-          bodyColor: 'rgba(255,255,255,0.85)',
-          padding: 12,
-          cornerRadius: 6,
+          mode: 'index', intersect: false,
+          backgroundColor: '#1a3a5c', titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,0.85)', padding: 12, cornerRadius: 6,
           callbacks: {
             title: i => i[0].label,
             label: i => {
-              const names = ['  Assault / Security', '  Non-Assault / Safety', '  Suicides'];
+              const names = ['  Security (homicides)', '  Safety (collisions etc.)', '  Suicide & Trespass'];
               return names[i.datasetIndex] + ': ' + i.raw;
             },
             afterBody: i => {
               const mi = i[0].dataIndex;
-              return ['', '  Total: ' + (security[mi] + safety[mi] + suicide[mi])];
+              return ['', '  Total: ' + ((security[mi] || 0) + (safety[mi] || 0) + (suicide[mi] || 0))];
             }
           },
           bodyFont:  { family: FONT, size: 11, weight: '600' },
@@ -335,12 +403,14 @@ function buildChart() {
           stacked: true,
           ticks: {
             font: { family: FONT, size: 9, weight: '700' },
-            color: '#4a5568', maxRotation: 90, minRotation: 90, autoSkip: true, autoSkipPadding: 4
+            color: '#4a5568', maxRotation: 90, minRotation: 90,
+            autoSkip: true, maxTicksLimit: 18
           },
-          grid: { display: false }, border: { color: '#dde4eb' }
+          grid: { display: false },
+          border: { color: '#dde4eb' }
         },
         y: {
-          stacked: true,
+          stacked: true, beginAtZero: true,
           ticks: {
             font: { family: FONT, size: 9, weight: '700' },
             color: '#4a5568', maxTicksLimit: 8, stepSize: 5
@@ -357,8 +427,7 @@ function buildChart() {
   });
 }
 
-buildChart();
-buildTable();
+initData();
 </script>
 </body>
 </html>
